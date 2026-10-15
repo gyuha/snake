@@ -49,17 +49,35 @@ describe('snakes', () => {
     expect(m.snakes.get(5)!.ang).toBeCloseTo(maxTurnRate(3, false) * 0.05, 6);
   });
 
-  it('applying a move keeps the visual head continuous, then the correction decays', () => {
+  it('applying a move never jumps the head; the correction is eased in over later frames', () => {
     const m = new Mirror();
     m.apply(addMsg(5));
     const s = m.snakes.get(5)!;
     m.advance(0.3);
     const before = m.headOf(s);
     m.apply({ t: 'snakeMove', id: 5, iang: quantizeAngle16(0.3) });
-    expect(headDistance(before, m.headOf(s))).toBeLessThan(1e-9);
     expect(s.body.points).toHaveLength(3);
-    m.advance(0.2);
-    expect(Math.hypot(s.corrX, s.corrY)).toBeLessThan(1e-9);
+    expect(headDistance(before, m.headOf(s))).toBe(0);
+    expect(Math.hypot(s.pendX, s.pendY)).toBeGreaterThan(0);
+
+    // One 60 fps frame moves the head by about speed·dt plus a small slice of the correction.
+    const speedStep = speedOf(3, false) / 60;
+    m.advance(1 / 60);
+    expect(headDistance(before, m.headOf(s))).toBeLessThan(speedStep * 1.5);
+
+    // The correction is consumed over time instead of lingering.
+    for (let i = 0; i < 240; i++) m.advance(1 / 60);
+    expect(Math.hypot(s.pendX, s.pendY)).toBeLessThan(0.05); // exponential decay: negligible, not exactly zero
+  });
+
+  it('snaps the head when it is far from the server estimate (stalled tab)', () => {
+    const m = new Mirror();
+    m.apply(addMsg(5));
+    const s = m.snakes.get(5)!;
+    s.hx += 400;
+    m.apply({ t: 'snakeMove', id: 5, iang: q0 });
+    expect(Math.abs(m.headOf(s).x - s.body.head.x)).toBeLessThan(40);
+    expect(s.pendX).toBe(0);
   });
 
   it('grow keeps the tail and updates fam; shrink drops the tail', () => {
