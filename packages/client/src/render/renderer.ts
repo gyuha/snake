@@ -157,11 +157,12 @@ export class Renderer {
     ctx.strokeStyle = main;
     ctx.lineWidth = 2 * r;
     ctx.stroke(path);
+    // A continuous sheen: a dashed stripe is anchored to the tail, so it crawls and jitters as the tail moves.
+    ctx.globalAlpha = 0.55;
     ctx.strokeStyle = stripe;
-    ctx.lineWidth = r * 1.1;
-    ctx.setLineDash([r * 1.2, r * 1.2]);
+    ctx.lineWidth = r * 0.7;
     ctx.stroke(path);
-    ctx.setLineDash([]);
+    ctx.globalAlpha = 1;
 
     this.drawEyes(head, s.ang, r);
 
