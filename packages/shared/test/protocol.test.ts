@@ -5,7 +5,7 @@ import {
 } from '../src/index';
 
 const clientMsgs: ClientMsg[] = [
-  { t: 'join', name: '뱀왕😀', skin: 7 },
+  { t: 'join', name: '뱀왕😀', skin: 7, animal: 5 },
   { t: 'steer', angle: 200 },
   { t: 'boost', on: true },
   { t: 'boost', on: false },
@@ -14,8 +14,8 @@ const clientMsgs: ClientMsg[] = [
 
 const serverMsgs: ServerMsg[] = [
   { t: 'welcome', selfId: 3, worldRadius: 8000, sectorSize: 480, segSpacing: 42, tickHz: 30, mscps: 411, maxSegments: 300 },
-  { t: 'snakeAdd', id: 65000, name: 'bot', skin: 2, ang: 1, wang: 65535, speed: 188, fam: 32768, tailX: 1234.567891234, tailY: 9876.54321, iangs: [0, 100, 65535] },
-  { t: 'snakeAdd', id: 1, name: '', skin: 0, ang: 0, wang: 0, speed: 74, fam: 0, tailX: 8000, tailY: 8000, iangs: [] },
+  { t: 'snakeAdd', id: 65000, name: 'bot', skin: 2, animal: 3, ang: 1, wang: 65535, speed: 188, fam: 32768, tailX: 1234.567891234, tailY: 9876.54321, iangs: [0, 100, 65535] },
+  { t: 'snakeAdd', id: 1, name: '', skin: 0, animal: 0, ang: 0, wang: 0, speed: 74, fam: 0, tailX: 8000, tailY: 8000, iangs: [] },
   { t: 'snakeRemove', id: 9, reason: 1 },
   { t: 'snakeMove', id: 9, iang: 40000 },
   { t: 'snakeGrow', id: 9, iang: 12, fam: 65535 },
@@ -45,6 +45,7 @@ describe('client messages', () => {
     ['truncated join', new Uint8Array([C2S.JOIN, 5, 0x61])],
     ['name over 24 bytes', new Uint8Array([C2S.JOIN, 25, ...new Array(25).fill(0x61), 0])],
     ['skin out of range', new Uint8Array([C2S.JOIN, 1, 0x61, 8])],
+    ['animal out of range', new Uint8Array([C2S.JOIN, 1, 0x61, 0, 6])],
     ['boost not 0/1', new Uint8Array([C2S.BOOST, 2])],
     ['invalid utf-8 name', new Uint8Array([C2S.JOIN, 2, 0xff, 0xfe, 0])],
   ])('rejects %s', (_label, bytes) => {
@@ -61,7 +62,7 @@ describe('server frames', () => {
 
   it('keeps f64 tail anchors bit-exact', () => {
     const w = new Writer();
-    encodeServer(w, { t: 'snakeAdd', id: 1, name: 'x', skin: 0, ang: 0, wang: 0, speed: 0, fam: 0, tailX: Math.PI * 1000, tailY: Math.E * 1000, iangs: [] });
+    encodeServer(w, { t: 'snakeAdd', id: 1, name: 'x', skin: 0, animal: 0, ang: 0, wang: 0, speed: 0, fam: 0, tailX: Math.PI * 1000, tailY: Math.E * 1000, iangs: [] });
     const [m] = decodeServerFrame(w.finish());
     expect(m.t === 'snakeAdd' && m.tailX).toBe(Math.PI * 1000);
     expect(m.t === 'snakeAdd' && m.tailY).toBe(Math.E * 1000);

@@ -41,6 +41,9 @@ export const FAM_CAP = 0.999;
 
 export const MAX_NAME_BYTES = 24;
 export const SKIN_COUNT = 8;
+/** Head/tail shapes; the wire carries the index. */
+export const ANIMALS = ['default', 'dog', 'cat', 'snake', 'panda', 'rabbit'] as const;
+export const ANIMAL_COUNT = ANIMALS.length;
 export const NO_KILLER = 0xffff;
 export const MINIMAP_SIZE = 64;
 export const LEADERBOARD_SIZE = 10;

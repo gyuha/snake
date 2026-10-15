@@ -66,7 +66,7 @@ export async function startServer(opts: ServerOptions): Promise<GameServer> {
     switch (msg.t) {
       case 'join': {
         if (own) return;
-        const s = world.spawnSnake(sanitizeName(msg.name), msg.skin, false);
+        const s = world.spawnSnake(sanitizeName(msg.name), msg.skin, false, msg.animal);
         session.view.snake = s;
         send(session, single({
           t: 'welcome', selfId: s.id, worldRadius: WORLD_RADIUS, sectorSize: SECTOR_SIZE,

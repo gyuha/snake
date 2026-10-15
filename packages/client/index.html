@@ -13,6 +13,11 @@
       .panel { background: #1c2330; padding: 28px 32px; border-radius: 14px; min-width: 280px; text-align: center; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5); }
       .panel h1 { margin: 0 0 16px; font-size: 28px; }
       #name { width: 100%; box-sizing: border-box; padding: 10px 12px; border-radius: 8px; border: 1px solid #3a4558; background: #0f141c; color: inherit; font-size: 16px; }
+      #preview { display: block; margin: 12px auto 0; width: 200px; height: 70px; }
+      #animals { display: flex; gap: 6px; justify-content: center; margin: 10px 0 0; flex-wrap: wrap; }
+      #animals button { width: 44px; height: 44px; border-radius: 10px; border: 2px solid transparent; background: #0f141c; cursor: pointer; padding: 0; }
+      #animals button.selected { border-color: #ffffff; }
+      #animals canvas { display: block; width: 40px; height: 40px; margin: auto; }
       #skins { display: flex; gap: 8px; justify-content: center; margin: 14px 0; flex-wrap: wrap; }
       #skins button { width: 28px; height: 28px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; padding: 0; }
       #skins button.selected { border-color: #ffffff; }
@@ -36,6 +41,8 @@
       <div class="panel">
         <h1>Snake</h1>
         <input id="name" maxlength="24" placeholder="닉네임" autocomplete="off" />
+        <canvas id="preview" width="400" height="140"></canvas>
+        <div id="animals"></div>
         <div id="skins"></div>
         <button id="play" class="primary" type="button">플레이</button>
       </div>

@@ -40,9 +40,9 @@ export class World {
     this.snakes.set(s.id, s);
   }
 
-  spawnSnake(name: string, skin: number, isBot: boolean): Snake {
+  spawnSnake(name: string, skin: number, isBot: boolean, animal = 0): Snake {
     const p = this.findSpawn();
-    const s = new Snake(this.allocId(), name, skin, isBot, p.x, p.y, this.rng() * TAU);
+    const s = new Snake(this.allocId(), name, skin, isBot, p.x, p.y, this.rng() * TAU, animal);
     this.addSnake(s);
     return s;
   }

@@ -39,6 +39,7 @@ export class Snake {
     x: number,
     y: number,
     ang: number,
+    readonly animal = 0,
   ) {
     const q = quantizeAngle16(ang);
     const a = dequantizeAngle16(q);

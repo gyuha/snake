@@ -6,4 +6,13 @@ describe('client index.html', () => {
     const html = readFileSync(new URL('../index.html', import.meta.url), 'utf-8');
     expect(html).toMatch(/<link\s+[^>]*rel="icon"[^>]*>/);
   });
+
+  it('has the start-screen pickers: a preview canvas, an animal row and a skin row', () => {
+    const html = readFileSync(new URL('../index.html', import.meta.url), 'utf-8');
+    expect(html).toMatch(/<canvas\s+id="preview"/);
+    expect(html).toMatch(/id="animals"/);
+    expect(html).toMatch(/id="skins"/);
+    expect(html.indexOf('id="preview"')).toBeLessThan(html.indexOf('id="animals"'));
+    expect(html.indexOf('id="animals"')).toBeLessThan(html.indexOf('id="skins"'));
+  });
 });

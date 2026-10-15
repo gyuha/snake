@@ -1,5 +1,6 @@
 import { TAU, WORLD_RADIUS, bodyRadius, zoom, type Vec } from '@snake/shared';
 import type { Mirror, SnakeView } from '../state/mirror';
+import { drawEyes, drawHead, drawTail } from './animals';
 import { FOOD_COLORS_CSS, SKINS } from './palette';
 import { traceSmooth } from './smooth';
 
@@ -171,30 +172,14 @@ export class Renderer {
     ctx.stroke(path);
     ctx.globalAlpha = 1;
 
-    this.drawEyes(head, s.ang, r);
+    if (pts.length > 1) drawTail(ctx, s.animal, tail, Math.atan2(pts[1].y - pts[0].y, pts[1].x - pts[0].x), r, main, stripe);
+    drawHead(ctx, s.animal, head, s.ang, r, main, stripe);
+    drawEyes(ctx, head, s.ang, r);
 
     ctx.font = `${14 / scale}px system-ui, sans-serif`;
     ctx.textAlign = 'center';
     ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
     const rank = m.ranks.get(s.id);
     ctx.fillText(rank ? `${s.name} - ${ordinal(rank)}` : s.name, head.x, head.y - r - 8 / scale);
-  }
-
-  private drawEyes(head: Vec, ang: number, r: number): void {
-    const { ctx } = this;
-    const cos = Math.cos(ang);
-    const sin = Math.sin(ang);
-    for (const side of [-1, 1]) {
-      const ex = head.x + cos * r * 0.35 - sin * side * r * 0.45;
-      const ey = head.y + sin * r * 0.35 + cos * side * r * 0.45;
-      ctx.fillStyle = '#ffffff';
-      ctx.beginPath();
-      ctx.arc(ex, ey, r * 0.32, 0, TAU);
-      ctx.fill();
-      ctx.fillStyle = '#111111';
-      ctx.beginPath();
-      ctx.arc(ex + cos * r * 0.12, ey + sin * r * 0.12, r * 0.16, 0, TAU);
-      ctx.fill();
-    }
   }
 }

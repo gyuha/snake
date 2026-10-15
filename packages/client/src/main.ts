@@ -1,10 +1,11 @@
-import { SKIN_COUNT, START_SEGMENTS, WORLD_RADIUS, dequantizeAngle8, quantizeAngle8, sanitizeName } from '@snake/shared';
+import { ANIMAL_COUNT, SKIN_COUNT, START_SEGMENTS, WORLD_RADIUS, dequantizeAngle8, quantizeAngle8, sanitizeName } from '@snake/shared';
 import { Input } from './input';
 import { Connection } from './net/connection';
 import { SKINS } from './render/palette';
 import { Renderer, cameraScale, type Camera } from './render/renderer';
 import { Mirror } from './state/mirror';
 import { Hud } from './ui/hud';
+import { drawAnimalIcon, drawPreview } from './ui/preview';
 
 const WS_URL: string = import.meta.env.VITE_WS_URL ?? `ws://${location.hostname}:8080`;
 const STEER_INTERVAL_MS = 1000 / 30;
@@ -20,6 +21,8 @@ const canvas = el<HTMLCanvasElement>('game');
 const startScreen = el('start');
 const nameInput = el<HTMLInputElement>('name');
 const skinPicker = el('skins');
+const animalPicker = el('animals');
+const previewCanvas = el<HTMLCanvasElement>('preview');
 const deathScreen = el('death');
 const finalScore = el('final-score');
 const lostScreen = el('lost');
@@ -31,6 +34,7 @@ const hud = new Hud(el<HTMLOListElement>('board'), el('rank'), el('stats'), el<H
 
 let conn: Connection | null = null;
 let skin = Math.floor(Math.random() * SKIN_COUNT);
+let animal = Math.floor(Math.random() * ANIMAL_COUNT);
 let camera: Camera = { x: WORLD_RADIUS, y: WORLD_RADIUS, scale: 0.5 };
 let lastSteer = -1;
 let lastSteerAt = 0;
@@ -67,7 +71,7 @@ function join(): void {
   if (!c) return;
   c.whenOpen()
     .then(() => {
-      c.send({ t: 'join', name, skin });
+      c.send({ t: 'join', name, skin, animal });
       lastSteer = -1;
       lastBoost = false;
       deathShown = false;
@@ -86,9 +90,37 @@ function buildSkinPicker(): void {
     b.addEventListener('click', () => {
       skin = i;
       for (const other of skinPicker.children) other.classList.toggle('selected', other === b);
+      refreshPicker();
     });
     skinPicker.append(b);
   });
+}
+
+const ANIMAL_LABELS = ['기본', '강아지', '고양이', '뱀', '팬더', '토끼'];
+
+function buildAnimalPicker(): void {
+  for (let i = 0; i < ANIMAL_COUNT; i++) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.setAttribute('aria-label', ANIMAL_LABELS[i]);
+    b.title = ANIMAL_LABELS[i];
+    if (i === animal) b.classList.add('selected');
+    const icon = document.createElement('canvas');
+    icon.width = 80;
+    icon.height = 80;
+    b.append(icon);
+    b.addEventListener('click', () => {
+      animal = i;
+      for (const other of animalPicker.children) other.classList.toggle('selected', other === b);
+      refreshPicker();
+    });
+    animalPicker.append(b);
+  }
+}
+
+function refreshPicker(): void {
+  drawPreview(previewCanvas, animal, skin);
+  animalPicker.querySelectorAll('canvas').forEach((icon, i) => drawAnimalIcon(icon, i, skin));
 }
 
 let last = performance.now();
@@ -143,6 +175,8 @@ try {
   nameInput.value = '';
 }
 buildSkinPicker();
+buildAnimalPicker();
+refreshPicker();
 connect();
 show(startScreen);
 requestAnimationFrame(frame);

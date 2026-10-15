@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DEATH_FOOD_VALUE, NO_KILLER, TICK_DT, WORLD_RADIUS, angleDiff, quantizeAngle16 } from '@snake/shared';
+import { ANIMAL_COUNT, DEATH_FOOD_VALUE, NO_KILLER, TICK_DT, WORLD_RADIUS, angleDiff, quantizeAngle16 } from '@snake/shared';
 import { BotController, decide, type Brain } from '../src/bots/bot';
 import { Snake } from '../src/game/snake';
 import { World } from '../src/game/world';
@@ -34,6 +34,16 @@ describe('BotController', () => {
     expect(bots.count).toBe(5);
     expect(w.snakes.has(victim.id)).toBe(false);
     expect(w.snakes.size).toBe(5);
+  });
+
+  it('gives each bot an animal within range', () => {
+    const w = emptyWorld();
+    new BotController(20, seededRng(3)).update(w, 0);
+    for (const s of w.snakes.values()) {
+      expect(Number.isInteger(s.animal)).toBe(true);
+      expect(s.animal).toBeGreaterThanOrEqual(0);
+      expect(s.animal).toBeLessThan(ANIMAL_COUNT);
+    }
   });
 });
 

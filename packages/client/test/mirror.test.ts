@@ -9,7 +9,7 @@ const q0 = quantizeAngle16(0);
 
 function addMsg(id: number, speedUnits = speedOf(3, false)): ServerMsg {
   return {
-    t: 'snakeAdd', id, name: `s${id}`, skin: 1, ang: q0, wang: q0, speed: toWireSpeed(speedUnits),
+    t: 'snakeAdd', id, name: `s${id}`, skin: 1, animal: 4, ang: q0, wang: q0, speed: toWireSpeed(speedUnits),
     fam: toWireFam(0.25), tailX: 1000, tailY: 2000, iangs: [q0, q0],
   };
 }
@@ -26,6 +26,7 @@ describe('snakes', () => {
     expect(s.body.points).toHaveLength(3);
     expect(s.body.head.x).toBeCloseTo(1000 + 2 * SEG_SPACING, 9);
     expect(s.fam).toBeCloseTo(0.25, 4);
+    expect(s.animal).toBe(4);
     expect(s.boosting).toBe(false);
     m.apply(addMsg(6, 375));
     expect(m.snakes.get(6)!.boosting).toBe(true);

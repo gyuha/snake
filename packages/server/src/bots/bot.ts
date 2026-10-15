@@ -1,4 +1,4 @@
-import { BOT_TARGET, SKIN_COUNT, START_SEGMENTS, TAU, TICK_HZ, WORLD_RADIUS, normAngle } from '@snake/shared';
+import { ANIMAL_COUNT, BOT_TARGET, SKIN_COUNT, START_SEGMENTS, TAU, TICK_HZ, WORLD_RADIUS, normAngle } from '@snake/shared';
 import type { Food } from '../game/food';
 import type { Snake } from '../game/snake';
 import type { World } from '../game/world';
@@ -41,7 +41,7 @@ export class BotController {
     for (const id of this.brains.keys()) if (!world.snakes.has(id)) this.brains.delete(id);
     while (this.brains.size < this.target) {
       const name = BOT_NAMES[Math.floor(this.rng() * BOT_NAMES.length)];
-      const s = world.spawnSnake(name, Math.floor(this.rng() * SKIN_COUNT), true);
+      const s = world.spawnSnake(name, Math.floor(this.rng() * SKIN_COUNT), true, Math.floor(this.rng() * ANIMAL_COUNT));
       this.brains.set(s.id, { wanderAngle: s.ang, wanderLeft: 0 });
     }
     for (const [id, b] of this.brains) {

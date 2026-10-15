@@ -8,6 +8,7 @@ export interface SnakeView {
   id: number;
   name: string;
   skin: number;
+  animal: number;
   body: BodyReplica;
   ang: number;
   wang: number;
@@ -117,6 +118,7 @@ export class Mirror {
           id: msg.id,
           name: msg.name,
           skin: msg.skin,
+          animal: msg.animal,
           body,
           ang: dequantizeAngle16(msg.ang),
           wang: dequantizeAngle16(msg.wang),

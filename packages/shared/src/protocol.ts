@@ -1,4 +1,4 @@
-import { MAX_NAME_BYTES, MINIMAP_SIZE, SKIN_COUNT } from './constants';
+import { ANIMAL_COUNT, MAX_NAME_BYTES, MINIMAP_SIZE, SKIN_COUNT } from './constants';
 
 export class ProtocolError extends Error {}
 
@@ -24,7 +24,7 @@ export const S2C = {
 } as const;
 
 export type ClientMsg =
-  | { t: 'join'; name: string; skin: number }
+  | { t: 'join'; name: string; skin: number; animal: number }
   | { t: 'steer'; angle: number }
   | { t: 'boost'; on: boolean }
   | { t: 'ping' };
@@ -49,7 +49,7 @@ export interface SnakeRank {
 
 export type ServerMsg =
   | { t: 'welcome'; selfId: number; worldRadius: number; sectorSize: number; segSpacing: number; tickHz: number; mscps: number; maxSegments: number }
-  | { t: 'snakeAdd'; id: number; name: string; skin: number; ang: number; wang: number; speed: number; fam: number; tailX: number; tailY: number; iangs: number[] }
+  | { t: 'snakeAdd'; id: number; name: string; skin: number; animal: number; ang: number; wang: number; speed: number; fam: number; tailX: number; tailY: number; iangs: number[] }
   | { t: 'snakeRemove'; id: number; reason: number }
   | { t: 'snakeMove'; id: number; iang: number }
   | { t: 'snakeGrow'; id: number; iang: number; fam: number }
@@ -219,7 +219,7 @@ export function encodeClient(msg: ClientMsg): Uint8Array {
   switch (msg.t) {
     case 'join':
       checkName(msg.name);
-      w.u8(C2S.JOIN).str(msg.name).u8(msg.skin);
+      w.u8(C2S.JOIN).str(msg.name).u8(msg.skin).u8(msg.animal);
       break;
     case 'steer':
       w.u8(C2S.STEER).u8(msg.angle);
@@ -244,7 +244,9 @@ export function decodeClient(buf: Uint8Array): ClientMsg {
       checkName(name);
       const skin = r.u8();
       if (skin >= SKIN_COUNT) throw new ProtocolError(`skin out of range: ${skin}`);
-      msg = { t: 'join', name, skin };
+      const animal = r.u8();
+      if (animal >= ANIMAL_COUNT) throw new ProtocolError(`animal out of range: ${animal}`);
+      msg = { t: 'join', name, skin, animal };
       break;
     }
     case C2S.STEER:
@@ -273,7 +275,7 @@ export function encodeServer(w: Writer, msg: ServerMsg): void {
         .u8(msg.segSpacing).u8(msg.tickHz).u16(msg.mscps).u16(msg.maxSegments);
       break;
     case 'snakeAdd':
-      w.u8(S2C.SNAKE_ADD).u16(msg.id).str(msg.name).u8(msg.skin).u16(msg.ang).u16(msg.wang)
+      w.u8(S2C.SNAKE_ADD).u16(msg.id).str(msg.name).u8(msg.skin).u8(msg.animal).u16(msg.ang).u16(msg.wang)
         .u8(msg.speed).u16(msg.fam).u16(msg.iangs.length + 1).f64(msg.tailX).f64(msg.tailY);
       for (const a of msg.iangs) w.u16(a);
       break;
@@ -337,6 +339,8 @@ function decodeServerMsg(r: Reader): ServerMsg {
       const id = r.u16();
       const name = r.str();
       const skin = r.u8();
+      const animal = r.u8();
+      if (animal >= ANIMAL_COUNT) throw new ProtocolError(`animal out of range: ${animal}`);
       const ang = r.u16();
       const wang = r.u16();
       const speed = r.u8();
@@ -347,7 +351,7 @@ function decodeServerMsg(r: Reader): ServerMsg {
       const tailY = r.f64();
       const iangs: number[] = [];
       for (let i = 1; i < n; i++) iangs.push(r.u16());
-      return { t: 'snakeAdd', id, name, skin, ang, wang, speed, fam, tailX, tailY, iangs };
+      return { t: 'snakeAdd', id, name, skin, animal, ang, wang, speed, fam, tailX, tailY, iangs };
     }
     case S2C.SNAKE_REMOVE:
       return { t: 'snakeRemove', id: r.u16(), reason: r.u8() };

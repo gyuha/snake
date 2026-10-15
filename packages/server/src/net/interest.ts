@@ -52,6 +52,7 @@ export function snakeAddMsg(s: Snake): ServerMsg {
     id: s.id,
     name: s.name,
     skin: s.skin,
+    animal: s.animal,
     ang: quantizeAngle16(s.ang),
     wang: quantizeAngle16(s.wang),
     speed: toWireSpeed(s.speed),

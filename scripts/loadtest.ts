@@ -1,5 +1,5 @@
 import { WebSocket } from 'ws';
-import { BOT_TARGET, SKIN_COUNT, TAU, decodeServerFrame, encodeClient, quantizeAngle8, type ClientMsg } from '@snake/shared';
+import { ANIMAL_COUNT, BOT_TARGET, SKIN_COUNT, TAU, decodeServerFrame, encodeClient, quantizeAngle8, type ClientMsg } from '@snake/shared';
 import { BotController } from '../packages/server/src/bots/bot';
 import { startServer } from '../packages/server/src/server';
 
@@ -27,7 +27,7 @@ for (let i = 0; i < CLIENTS; i++) {
   const send = (msg: ClientMsg) => {
     if (ws.readyState === WebSocket.OPEN) ws.send(encodeClient(msg));
   };
-  const join = () => send({ t: 'join', name: `load${i}`, skin: i % SKIN_COUNT });
+  const join = () => send({ t: 'join', name: `load${i}`, skin: i % SKIN_COUNT, animal: i % ANIMAL_COUNT });
   ws.on('open', join);
   ws.on('message', (data: Buffer) => {
     if (measuring) bytes += data.length + WS_HEADER_BYTES;

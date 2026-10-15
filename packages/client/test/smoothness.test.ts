@@ -36,7 +36,7 @@ function simulate(opts: { seconds: number; latency: number; jitter: number; stee
   const mirror = new Mirror();
   const snap = s.addSnapshot();
   mirror.apply({
-    t: 'snakeAdd', id: 7, name: 'bot', skin: 0, ang: quantizeAngle16(s.ang), wang: quantizeAngle16(s.wang),
+    t: 'snakeAdd', id: 7, name: 'bot', skin: 0, animal: 0, ang: quantizeAngle16(s.ang), wang: quantizeAngle16(s.wang),
     speed: toWireSpeed(s.speed), fam: toWireFam(s.fam), tailX: snap.tailX, tailY: snap.tailY, iangs: snap.iangs,
   });
 

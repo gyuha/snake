@@ -56,13 +56,14 @@ describe('game server', () => {
   it('join sends welcome, then self snakeAdd and sector food', async () => {
     const { port } = await boot();
     const c = await connect(port);
-    c.send({ t: 'join', name: 'tester', skin: 3 });
+    c.send({ t: 'join', name: 'tester', skin: 3, animal: 2 });
     await waitFor(() => welcomeOf(c) !== null);
     const selfId = welcomeOf(c)!.selfId;
     await waitFor(() => c.msgs.some((m) => m.t === 'snakeAdd' && m.id === selfId));
     expect(c.msgs.some((m) => m.t === 'sectorFood')).toBe(true);
     const add = c.msgs.find((m) => m.t === 'snakeAdd' && m.id === selfId);
     expect(add && add.t === 'snakeAdd' && add.name).toBe('tester');
+    expect(add && add.t === 'snakeAdd' && add.animal).toBe(2);
   });
 
   it('answers ping with pong', async () => {
@@ -75,7 +76,7 @@ describe('game server', () => {
   it('steer changes the target angle', async () => {
     const { port } = await boot();
     const c = await connect(port);
-    c.send({ t: 'join', name: 'a', skin: 0 });
+    c.send({ t: 'join', name: 'a', skin: 0, animal: 0 });
     await waitFor(() => welcomeOf(c) !== null);
     const selfId = welcomeOf(c)!.selfId;
     await waitFor(() => c.msgs.some((m) => m.t === 'snakeAdd' && m.id === selfId));
@@ -86,8 +87,8 @@ describe('game server', () => {
   it('ignores join while already alive', async () => {
     const srv = await boot();
     const c = await connect(srv.port);
-    c.send({ t: 'join', name: 'a', skin: 0 });
-    c.send({ t: 'join', name: 'b', skin: 0 });
+    c.send({ t: 'join', name: 'a', skin: 0, animal: 0 });
+    c.send({ t: 'join', name: 'b', skin: 0, animal: 0 });
     await waitFor(() => welcomeOf(c) !== null);
     await new Promise((r) => setTimeout(r, 100));
     expect(c.msgs.filter((m) => m.t === 'welcome')).toHaveLength(1);
@@ -97,7 +98,7 @@ describe('game server', () => {
   it('garbage frame closes only that socket', async () => {
     const { port } = await boot();
     const good = await connect(port);
-    good.send({ t: 'join', name: 'good', skin: 0 });
+    good.send({ t: 'join', name: 'good', skin: 0, animal: 0 });
     await waitFor(() => welcomeOf(good) !== null);
     const bad = await connect(port);
     bad.ws.send(new Uint8Array([0x7f, 1, 2]));
@@ -117,7 +118,7 @@ describe('game server', () => {
   it('disconnect while alive turns the snake into food', async () => {
     const srv = await boot();
     const c = await connect(srv.port);
-    c.send({ t: 'join', name: 'quitter', skin: 1 });
+    c.send({ t: 'join', name: 'quitter', skin: 1, animal: 0 });
     await waitFor(() => welcomeOf(c) !== null);
     const id = welcomeOf(c)!.selfId;
     const snake = srv.world.snakes.get(id)!;
@@ -130,21 +131,21 @@ describe('game server', () => {
   it('a killed player gets death and its own removal with reason 1', async () => {
     const srv = await boot();
     const c = await connect(srv.port);
-    c.send({ t: 'join', name: 'victim', skin: 2 });
+    c.send({ t: 'join', name: 'victim', skin: 2, animal: 0 });
     await waitFor(() => welcomeOf(c) !== null);
     const id = welcomeOf(c)!.selfId;
     await waitFor(() => c.msgs.some((m) => m.t === 'snakeAdd' && m.id === id));
     srv.world.killSnake(srv.world.snakes.get(id)!, NO_KILLER);
     await waitFor(() => c.msgs.some((m) => m.t === 'death'));
     expect(c.msgs).toContainEqual({ t: 'snakeRemove', id, reason: 1 });
-    c.send({ t: 'join', name: 'again', skin: 2 });
+    c.send({ t: 'join', name: 'again', skin: 2, animal: 0 });
     await waitFor(() => c.msgs.filter((m) => m.t === 'welcome').length === 2);
   });
 
   it('sends leaderboard and minimap about once per second', async () => {
     const { port } = await boot();
     const c = await connect(port);
-    c.send({ t: 'join', name: 'a', skin: 0 });
+    c.send({ t: 'join', name: 'a', skin: 0, animal: 0 });
     await waitFor(() => c.msgs.some((m) => m.t === 'leaderboard') && c.msgs.some((m) => m.t === 'minimap'), 2500);
   });
 

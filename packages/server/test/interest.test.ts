@@ -169,6 +169,16 @@ describe('dense sectors and extras', () => {
     expect(bits[idx >> 3] & (0x80 >> (idx & 7))).not.toBe(0);
   });
 
+  it('snakeAdd carries the snake animal', () => {
+    const world = new World(seededRng(5), 0);
+    const view = newViewState();
+    const self = new Snake(world.allocId(), 'me', 0, false, C, C, 0, 3);
+    world.addSnake(self);
+    view.snake = self;
+    const add = step(world, view).find((m) => m.t === 'snakeAdd' && m.id === self.id);
+    expect(add && add.t === 'snakeAdd' && add.animal).toBe(3);
+  });
+
   it('a viewer without a snake keeps watching its last view center', () => {
     const world = new World(seededRng(9), 0);
     const view = newViewState();
