@@ -142,6 +142,7 @@ export default defineConfig({
 ```
 node_modules/
 dist/
+.task/
 *.log
 ```
 
@@ -2865,6 +2866,8 @@ describe('game server', () => {
     c.send({ t: 'join', name: 'a', skin: 0 });
     await waitFor(() => welcomeOf(c) !== null);
     const selfId = welcomeOf(c)!.selfId;
+    // The first frame carries the current wang inside snakeAdd; a steer sent before it would never produce snakeState.
+    await waitFor(() => c.msgs.some((m) => m.t === 'snakeAdd' && m.id === selfId));
     c.send({ t: 'steer', angle: 64 });
     await waitFor(() => c.msgs.some((m) => m.t === 'snakeState' && m.id === selfId && m.wang === quantizeAngle16(Math.PI / 2)));
   });
