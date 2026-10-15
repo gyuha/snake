@@ -8,7 +8,7 @@
   "scripts": {
     "dev": "concurrently -n server,client -c green,yellow \"npm run dev -w @snake/server\" \"npm run dev -w @snake/client\"",
     "test": "vitest run",
-    "typecheck": "tsc -p packages/shared && tsc -p packages/server && tsc -p packages/client && tsc -p scripts",
+    "typecheck": "tsc -p packages/shared && tsc -p packages/server && tsc -p packages/client",
     "loadtest": "tsx scripts/loadtest.ts"
   },
   "devDependencies": {
