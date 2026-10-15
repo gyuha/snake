@@ -1,0 +1,65 @@
+version: '3'
+
+# Thin wrappers around the npm workspace scripts (see package.json).
+# Ports: server ws://localhost:8080 (PORT overrides), client http://localhost:5173.
+
+tasks:
+  install:
+    desc: 의존성 설치 (package.json/lock 변경 시에만 실행)
+    sources:
+      - package.json
+      - package-lock.json
+      - packages/*/package.json
+    generates:
+      - node_modules/.package-lock.json
+    cmds:
+      - npm install
+
+  dev:
+    desc: 서버(봇 포함)와 클라이언트 개발 서버를 함께 실행
+    deps: [install]
+    cmds:
+      - npm run dev
+
+  server:
+    desc: 게임 서버만 실행 (PORT 환경 변수로 포트 변경)
+    deps: [install]
+    cmds:
+      - npm run start -w @snake/server
+
+  client:
+    desc: 클라이언트 개발 서버만 실행 (VITE_WS_URL로 서버 주소 지정)
+    deps: [install]
+    cmds:
+      - npm run dev -w @snake/client
+
+  test:
+    desc: 전체 테스트 실행
+    deps: [install]
+    cmds:
+      - npm test
+
+  typecheck:
+    desc: 전체 패키지 타입 검사
+    deps: [install]
+    cmds:
+      - npm run typecheck
+
+  build:
+    desc: 클라이언트 프로덕션 빌드 (packages/client/dist)
+    deps: [install]
+    cmds:
+      - npm run build -w @snake/client
+
+  loadtest:
+    desc: '부하 테스트 (예: task loadtest -- 100 60 → 클라이언트 100명, 60초)'
+    deps: [install]
+    cmds:
+      - npm run loadtest -- {{.CLI_ARGS}}
+
+  check:
+    desc: 커밋 전 검증 (테스트 + 타입 검사 + 빌드)
+    cmds:
+      - task: test
+      - task: typecheck
+      - task: build
