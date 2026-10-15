@@ -1,6 +1,7 @@
 import { TAU, WORLD_RADIUS, bodyRadius, zoom, type Vec } from '@snake/shared';
 import type { Mirror, SnakeView } from '../state/mirror';
 import { FOOD_COLORS_CSS, SKINS } from './palette';
+import { traceSmooth } from './smooth';
 
 export interface Camera {
   x: number;
@@ -142,9 +143,7 @@ export class Renderer {
       tail = { x: pts[0].x + (pts[1].x - pts[0].x) * f, y: pts[0].y + (pts[1].y - pts[0].y) * f };
     }
     const path = new Path2D();
-    path.moveTo(tail.x, tail.y);
-    for (let i = 1; i < pts.length; i++) path.lineTo(pts[i].x, pts[i].y);
-    path.lineTo(head.x, head.y);
+    traceSmooth(path, [tail, ...pts.slice(1), head]);
 
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
