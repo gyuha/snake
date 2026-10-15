@@ -1,0 +1,21 @@
+{
+  "name": "snake",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently -n server,client -c green,yellow \"npm run dev -w @snake/server\" \"npm run dev -w @snake/client\"",
+    "test": "vitest run",
+    "typecheck": "tsc -p packages/shared && tsc -p packages/server && tsc -p packages/client && tsc -p scripts",
+    "loadtest": "tsx scripts/loadtest.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "concurrently": "^9.2.5",
+    "tsx": "^4.23.15",
+    "typescript": "^5.9.3",
+    "vitest": "^2.1.9"
+  }
+}
