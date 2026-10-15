@@ -108,6 +108,8 @@ export function decide(world: World, s: Snake, brain: Brain, rng: () => number):
   let bestScore = 0;
   let deathValue = 0;
   for (const f of world.food.queryCircle(s.headX, s.headY, FOOD_SEARCH)) {
+    // Food inside the edge band would pull the bot back out right after the edge rule turns it in.
+    if (Math.hypot(f.x - WORLD_RADIUS, f.y - WORLD_RADIUS) > WORLD_RADIUS - EDGE_MARGIN) continue;
     const d = Math.max(1, Math.hypot(f.x - s.headX, f.y - s.headY));
     const value = f.value / d;
     if (value > bestScore) {

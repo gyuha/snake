@@ -46,6 +46,15 @@ describe('decide', () => {
     expect(d.boost).toBe(false);
   });
 
+  it('ignores food in the edge band so it does not oscillate at the margin', () => {
+    const w = emptyWorld();
+    const s = placeBot(w, 2 * C - 700, C, 0);
+    w.food.add(2 * C - 300, C, 8, 0, DEATH_FOOD_VALUE, 'death');
+    w.index.rebuild(w.snakes.values());
+    const d = decide(w, s, { wanderAngle: Math.PI, wanderLeft: 5 }, seededRng(5));
+    expect(Math.abs(angleDiff(Math.PI, d.wang))).toBeLessThan(0.01);
+  });
+
   it('steers away from a body directly ahead', () => {
     const w = emptyWorld();
     const s = placeBot(w, C, C, 0);
