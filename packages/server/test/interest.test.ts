@@ -155,7 +155,7 @@ describe('dense sectors and extras', () => {
     const frame = buildFrame(view, world, { ranked, minimap, death: { snake: self, killerId: NO_KILLER } });
     world.endTick();
     const msgs = decodeServerFrame(frame!);
-    expect(msgs).toContainEqual({ t: 'leaderboard', myRank: 1, total: 1, entries: [{ score: self.score, name: 'me' }] });
+    expect(msgs).toContainEqual({ t: 'leaderboard', myRank: 1, total: 1, entries: [{ score: self.score, name: 'me' }], ranks: [{ id: self.id, rank: 1 }] });
     expect(msgs).toContainEqual({ t: 'death', killerId: NO_KILLER, finalScore: self.score });
     expect(msgs.some((m) => m.t === 'minimap')).toBe(true);
   });

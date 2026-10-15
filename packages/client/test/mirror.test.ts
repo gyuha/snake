@@ -149,10 +149,11 @@ describe('food', () => {
 describe('session messages', () => {
   it('stores leaderboard, minimap and death; welcome clears death; reset clears all', () => {
     const m = new Mirror();
-    m.apply({ t: 'leaderboard', myRank: 2, total: 9, entries: [{ score: 50, name: 'x' }] });
+    m.apply({ t: 'leaderboard', myRank: 2, total: 9, entries: [{ score: 50, name: 'x' }], ranks: [{ id: 5, rank: 2 }] });
     m.apply({ t: 'minimap', bits: new Uint8Array(512) });
     m.apply({ t: 'death', killerId: 3, finalScore: 120 });
     expect(m.leaderboard?.myRank).toBe(2);
+    expect(m.ranks.get(5)).toBe(2);
     expect(m.minimap).not.toBeNull();
     expect(m.death).toEqual({ killerId: 3, finalScore: 120 });
     m.apply({ t: 'welcome', selfId: 8, worldRadius: 8000, sectorSize: 480, segSpacing: 42, tickHz: 30, mscps: 411, maxSegments: 300 });

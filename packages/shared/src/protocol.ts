@@ -41,6 +41,12 @@ export interface LeaderEntry {
   name: string;
 }
 
+/** Global rank (1 = first) of a snake currently in the receiver's view. */
+export interface SnakeRank {
+  id: number;
+  rank: number;
+}
+
 export type ServerMsg =
   | { t: 'welcome'; selfId: number; worldRadius: number; sectorSize: number; segSpacing: number; tickHz: number; mscps: number; maxSegments: number }
   | { t: 'snakeAdd'; id: number; name: string; skin: number; ang: number; wang: number; speed: number; fam: number; tailX: number; tailY: number; iangs: number[] }
@@ -54,7 +60,7 @@ export type ServerMsg =
   | { t: 'foodAdd'; sx: number; sy: number; rx: number; ry: number; size: number; color: number }
   | { t: 'foodEat'; sx: number; sy: number; rx: number; ry: number; eaterId: number }
   | { t: 'sectorLeave'; sx: number; sy: number }
-  | { t: 'leaderboard'; myRank: number; total: number; entries: LeaderEntry[] }
+  | { t: 'leaderboard'; myRank: number; total: number; entries: LeaderEntry[]; ranks: SnakeRank[] }
   | { t: 'minimap'; bits: Uint8Array }
   | { t: 'death'; killerId: number; finalScore: number }
   | { t: 'pong' };
@@ -306,6 +312,8 @@ export function encodeServer(w: Writer, msg: ServerMsg): void {
     case 'leaderboard':
       w.u8(S2C.LEADERBOARD).u16(msg.myRank).u16(msg.total).u8(msg.entries.length);
       for (const e of msg.entries) w.u24(e.score).str(e.name);
+      w.u8(msg.ranks.length);
+      for (const e of msg.ranks) w.u16(e.id).u16(e.rank);
       break;
     case 'minimap':
       if (msg.bits.length !== MINIMAP_BYTES) throw new ProtocolError('minimap size mismatch');
@@ -373,7 +381,10 @@ function decodeServerMsg(r: Reader): ServerMsg {
       const n = r.u8();
       const entries: LeaderEntry[] = [];
       for (let i = 0; i < n; i++) entries.push({ score: r.u24(), name: r.str() });
-      return { t: 'leaderboard', myRank, total, entries };
+      const ranks: SnakeRank[] = [];
+      const rn = r.u8();
+      for (let i = 0; i < rn; i++) ranks.push({ id: r.u16(), rank: r.u16() });
+      return { t: 'leaderboard', myRank, total, entries, ranks };
     }
     case S2C.MINIMAP:
       return { t: 'minimap', bits: r.bytes(MINIMAP_BYTES) };

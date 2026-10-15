@@ -27,7 +27,7 @@ const serverMsgs: ServerMsg[] = [
   { t: 'foodAdd', sx: 2, sy: 3, rx: 4, ry: 5, size: 3, color: 6 },
   { t: 'foodEat', sx: 2, sy: 3, rx: 4, ry: 5, eaterId: 77 },
   { t: 'sectorLeave', sx: 10, sy: 11 },
-  { t: 'leaderboard', myRank: 4, total: 31, entries: [{ score: 20245, name: 'a' }, { score: 10, name: '한글' }] },
+  { t: 'leaderboard', myRank: 4, total: 31, entries: [{ score: 20245, name: 'a' }, { score: 10, name: '한글' }], ranks: [{ id: 9, rank: 1 }, { id: 300, rank: 31 }] },
   { t: 'minimap', bits: Uint8Array.from({ length: 512 }, (_, i) => i & 0xff) },
   { t: 'death', killerId: 0xffff, finalScore: 16777215 },
   { t: 'pong' },

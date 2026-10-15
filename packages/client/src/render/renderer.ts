@@ -3,6 +3,13 @@ import type { Mirror, SnakeView } from '../state/mirror';
 import { FOOD_COLORS_CSS, SKINS } from './palette';
 import { traceSmooth } from './smooth';
 
+/** 1 → "1st", 2 → "2nd", 11 → "11th", 22 → "22nd". */
+export function ordinal(n: number): string {
+  const rem100 = n % 100;
+  if (rem100 >= 11 && rem100 <= 13) return `${n}th`;
+  return `${n}${['th', 'st', 'nd', 'rd'][n % 10] ?? 'th'}`;
+}
+
 export interface Camera {
   x: number;
   y: number;
@@ -169,7 +176,8 @@ export class Renderer {
     ctx.font = `${14 / scale}px system-ui, sans-serif`;
     ctx.textAlign = 'center';
     ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
-    ctx.fillText(s.name, head.x, head.y - r - 8 / scale);
+    const rank = m.ranks.get(s.id);
+    ctx.fillText(rank ? `${s.name} - ${ordinal(rank)}` : s.name, head.x, head.y - r - 8 / scale);
   }
 
   private drawEyes(head: Vec, ang: number, r: number): void {

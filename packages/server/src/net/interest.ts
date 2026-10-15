@@ -1,7 +1,7 @@
 import {
   LEADERBOARD_SIZE, MINIMAP_SIZE, SECTORS_PER_EDGE, SECTOR_SIZE, START_SEGMENTS, WORLD_RADIUS,
   Writer, encodeServer, quantizeAngle16, sectorCoord, sectorKey, toWireFam, toWireSpeed,
-  viewRadius, type FoodWire, type ServerMsg,
+  viewRadius, type FoodWire, type ServerMsg, type SnakeRank,
 } from '@snake/shared';
 import type { Food } from '../game/food';
 import type { Snake } from '../game/snake';
@@ -142,11 +142,16 @@ export function buildFrame(view: ViewState, world: World, extras: FrameExtras): 
   if (extras.ranked) {
     const ranked = extras.ranked;
     const myRank = self ? ranked.indexOf(self) + 1 : 0;
+    const ranks: SnakeRank[] = [];
+    ranked.forEach((s, i) => {
+      if (nextSnakes.has(s.id)) ranks.push({ id: s.id, rank: i + 1 });
+    });
     encodeServer(w, {
       t: 'leaderboard',
       myRank,
       total: ranked.length,
       entries: ranked.slice(0, LEADERBOARD_SIZE).map((s) => ({ score: Math.min(s.score, MAX_U24), name: s.name })),
+      ranks,
     });
   }
   if (extras.minimap) encodeServer(w, { t: 'minimap', bits: extras.minimap });

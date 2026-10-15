@@ -49,6 +49,8 @@ export class Mirror {
   readonly snakes = new Map<number, SnakeView>();
   readonly foods = new Map<number, FoodView>();
   leaderboard: { myRank: number; total: number; entries: LeaderEntry[] } | null = null;
+  /** Global rank per snake id, refreshed with each leaderboard message (about 1 Hz). */
+  ranks = new Map<number, number>();
   minimap: Uint8Array | null = null;
   death: { killerId: number; finalScore: number } | null = null;
 
@@ -57,6 +59,7 @@ export class Mirror {
     this.snakes.clear();
     this.foods.clear();
     this.leaderboard = null;
+    this.ranks.clear();
     this.minimap = null;
     this.death = null;
   }
@@ -179,6 +182,7 @@ export class Mirror {
       }
       case 'leaderboard':
         this.leaderboard = { myRank: msg.myRank, total: msg.total, entries: msg.entries };
+        this.ranks = new Map(msg.ranks.map((e) => [e.id, e.rank]));
         return;
       case 'minimap':
         this.minimap = msg.bits;
