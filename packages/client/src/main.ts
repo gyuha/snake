@@ -5,6 +5,7 @@ import { SKINS } from './render/palette';
 import { Renderer, cameraScale, type Camera } from './render/renderer';
 import { Mirror } from './state/mirror';
 import { Hud } from './ui/hud';
+import { setupTouchControls } from './ui/touch-controls';
 import { drawAnimalIcon, drawPreview } from './ui/preview';
 
 const WS_URL: string = import.meta.env.VITE_WS_URL ?? `ws://${location.hostname}:8080`;
@@ -30,6 +31,7 @@ const lostScreen = el('lost');
 const mirror = new Mirror();
 const renderer = new Renderer(canvas);
 const input = new Input(canvas);
+setupTouchControls(input, el('joystick'), el('joystick-knob'), el('boost-btn'));
 const hud = new Hud(el<HTMLOListElement>('board'), el('rank'), el('stats'), el<HTMLCanvasElement>('minimap'));
 
 let conn: Connection | null = null;

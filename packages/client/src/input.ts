@@ -5,6 +5,7 @@ export class Input {
   private mouseBoost = false;
   private keyBoost = false;
   private keyTurn = 0;
+  touchBoost = false;
 
   constructor(canvas: HTMLCanvasElement) {
     canvas.addEventListener('mousemove', (e) => {
@@ -21,6 +22,7 @@ export class Input {
       this.mouseBoost = false;
       this.keyBoost = false;
       this.keyTurn = 0;
+      this.touchBoost = false;
     });
     window.addEventListener('keydown', (e) => {
       if (e.target instanceof HTMLInputElement) return;
@@ -37,7 +39,7 @@ export class Input {
   }
 
   get boost(): boolean {
-    return this.mouseBoost || this.keyBoost;
+    return this.mouseBoost || this.keyBoost || this.touchBoost;
   }
 
   update(dt: number): void {

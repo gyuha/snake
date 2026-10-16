@@ -15,4 +15,11 @@ describe('client index.html', () => {
     expect(html.indexOf('id="preview"')).toBeLessThan(html.indexOf('id="animals"'));
     expect(html.indexOf('id="animals"')).toBeLessThan(html.indexOf('id="skins"'));
   });
+
+  it('has touch controls: a joystick with a knob and a boost button', () => {
+    const html = readFileSync(new URL('../index.html', import.meta.url), 'utf-8');
+    expect(html).toMatch(/id="joystick"/);
+    expect(html).toMatch(/id="joystick-knob"/);
+    expect(html).toMatch(/id="boost-btn"/);
+  });
 });

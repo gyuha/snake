@@ -28,6 +28,18 @@
       #leaderboard li span:last-child { float: right; opacity: 0.8; }
       #stats { position: absolute; left: 16px; bottom: 14px; font-size: 16px; }
       #minimap { position: absolute; right: 16px; bottom: 16px; width: 128px; height: 128px; border-radius: 50%; background: rgba(0, 0, 0, 0.35); }
+      #touch-controls { display: none; }
+      @media (pointer: coarse) {
+        #touch-controls { display: block; position: fixed; inset: 0; pointer-events: none; }
+        #joystick, #boost-btn { position: absolute; bottom: 28px; pointer-events: auto; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+        #joystick { left: 28px; width: 130px; height: 130px; border-radius: 50%; background: rgba(255, 255, 255, 0.12); border: 2px solid rgba(255, 255, 255, 0.3); }
+        #joystick-knob { position: absolute; left: 50%; top: 50%; width: 56px; height: 56px; margin: -28px 0 0 -28px; border-radius: 50%; background: rgba(255, 255, 255, 0.45); pointer-events: none; }
+        #boost-btn { right: 28px; width: 84px; height: 84px; border-radius: 50%; border: 2px solid rgba(255, 255, 255, 0.4); background: rgba(255, 140, 60, 0.35); color: #fff; font-size: 15px; font-weight: 700; }
+        #boost-btn.active { background: rgba(255, 140, 60, 0.8); }
+        #minimap { bottom: auto; top: 12px; right: auto; left: 12px; width: 96px; height: 96px; }
+        #leaderboard { width: 150px; font-size: 11px; padding: 6px 8px; }
+        #stats { bottom: auto; top: 118px; left: 16px; font-size: 14px; }
+      }
     </style>
   </head>
   <body>
@@ -36,6 +48,10 @@
       <div id="leaderboard"><strong>리더보드</strong><ol id="board"></ol><div id="rank"></div></div>
       <div id="stats"></div>
       <canvas id="minimap"></canvas>
+    </div>
+    <div id="touch-controls">
+      <div id="joystick"><div id="joystick-knob"></div></div>
+      <button id="boost-btn" type="button">대쉬</button>
     </div>
     <div id="start" class="overlay">
       <div class="panel">
