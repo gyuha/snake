@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Snake 현황</title>
+    <link rel="icon" href="data:," />
+    <style>
+      :root { --panel-w: 240px; }
+      @media (max-width: 600px) { :root { --panel-w: 160px; } }
+      html, body { margin: 0; height: 100%; overflow: hidden; background: #10141c; font-family: system-ui, sans-serif; color: #e8ecf3; }
+      #map { position: fixed; left: 0; top: 0; bottom: 0; right: var(--panel-w); width: calc(100% - var(--panel-w)); height: 100%; }
+      #panel { position: fixed; top: 0; right: 0; bottom: 0; width: var(--panel-w); box-sizing: border-box; padding: 12px 14px; overflow-y: auto; background: rgba(0, 0, 0, 0.3); font-size: 13px; }
+      #panel h1 { margin: 0 0 8px; font-size: 16px; }
+      #board { margin: 0; padding-left: 28px; }
+      #board li { padding: 2px 0; }
+      #board li .score { float: right; opacity: 0.8; }
+      #board li .name { overflow-wrap: anywhere; }
+      #lost { position: fixed; left: 12px; top: 12px; padding: 6px 12px; border-radius: 8px; background: #b3412f; font-size: 14px; }
+      #lost[hidden] { display: none; }
+    </style>
+  </head>
+  <body>
+    <canvas id="map"></canvas>
+    <aside id="panel">
+      <h1>순위</h1>
+      <ol id="board"></ol>
+    </aside>
+    <div id="lost" hidden>연결 끊김 — 재접속 중…</div>
+    <script type="module" src="/src/status.ts"></script>
+  </body>
+</html>
