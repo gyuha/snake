@@ -8,6 +8,7 @@ import {
 } from '@snake/shared';
 import { World } from './game/world';
 import { buildFrame, buildMinimap } from './net/interest';
+import { buildOverview } from './net/overview';
 import { Session } from './net/session';
 
 export interface ServerStats {
@@ -37,6 +38,7 @@ const SOFT_BUFFER_LIMIT = 256 * 1024;
 const HARD_BUFFER_LIMIT = 2 * 1024 * 1024;
 const SLOW_TICK_MS = 50;
 const POLICY_VIOLATION = 1008;
+const OVERVIEW_EVERY_TICKS = 6; // 5 Hz at 30 Hz ticks
 
 function toBytes(data: RawData): Uint8Array {
   if (Array.isArray(data)) return new Uint8Array(Buffer.concat(data));
@@ -65,7 +67,7 @@ export async function startServer(opts: ServerOptions): Promise<GameServer> {
     const own = session.view.snake && session.view.snake.alive ? session.view.snake : null;
     switch (msg.t) {
       case 'join': {
-        if (own) return;
+        if (own || session.spectator) return;
         const s = world.spawnSnake(sanitizeName(msg.name), msg.skin, false, msg.animal);
         session.view.snake = s;
         send(session, single({
@@ -79,6 +81,10 @@ export async function startServer(opts: ServerOptions): Promise<GameServer> {
         return;
       case 'boost':
         own?.setInput(own.wang, msg.on);
+        return;
+      case 'spectate':
+        if (own) return;
+        session.spectator = true;
         return;
       case 'ping':
         send(session, single({ t: 'pong' }));
@@ -140,11 +146,24 @@ export async function startServer(opts: ServerOptions): Promise<GameServer> {
     const ranked = extrasDue ? world.leaderboard() : undefined;
     const minimap = extrasDue ? buildMinimap(world) : undefined;
     const deaths = new Map(world.deaths.map((d) => [d.snake.id, d]));
+    let overview: Uint8Array | undefined;
+    if (stats.ticks % OVERVIEW_EVERY_TICKS === 0) {
+      for (const s of sessions) {
+        if (s.spectator) {
+          overview = single(buildOverview(world));
+          break;
+        }
+      }
+    }
 
     for (const session of sessions) {
       const buffered = session.socket.bufferedAmount;
       if (buffered > HARD_BUFFER_LIMIT) {
         session.socket.terminate();
+        continue;
+      }
+      if (session.spectator) {
+        if (overview && buffered <= SOFT_BUFFER_LIMIT) send(session, overview);
         continue;
       }
       const light = buffered > SOFT_BUFFER_LIMIT;

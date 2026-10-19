@@ -155,4 +155,57 @@ describe('game server', () => {
     expect(srv.stats.avgTickMs).toBeGreaterThan(0);
     expect(srv.stats.maxTickMs).toBeGreaterThanOrEqual(srv.stats.avgTickMs);
   });
+
+  it('spectator gets overview of all snakes without a snake of its own or view frames', async () => {
+    const srv = await boot();
+    const player = await connect(srv.port);
+    player.send({ t: 'join', name: 'alpha', skin: 3, animal: 0 });
+    await waitFor(() => welcomeOf(player) !== null);
+
+    const spec = await connect(srv.port);
+    spec.send({ t: 'spectate' });
+    await waitFor(() => spec.msgs.some((m) => m.t === 'overview'));
+
+    const ov = spec.msgs.find((m) => m.t === 'overview');
+    if (!ov || ov.t !== 'overview') throw new Error('no overview');
+    expect(ov.snakes.map((s) => s.name)).toEqual(['alpha']);
+    expect(srv.world.snakes.size).toBe(1);
+
+    spec.send({ t: 'ping' });
+    await waitFor(() => spec.msgs.some((m) => m.t === 'pong'));
+    const kinds = new Set(spec.msgs.map((m) => m.t));
+    for (const t of ['welcome', 'snakeAdd', 'sectorFood', 'leaderboard', 'minimap'] as const) {
+      expect(kinds.has(t)).toBe(false);
+    }
+  });
+
+  it('a playing session cannot become a spectator and a spectator cannot join', async () => {
+    const srv = await boot();
+    const player = await connect(srv.port);
+    player.send({ t: 'join', name: 'p', skin: 0, animal: 0 });
+    await waitFor(() => welcomeOf(player) !== null);
+    player.send({ t: 'spectate' });
+    player.send({ t: 'ping' });
+    await waitFor(() => player.msgs.some((m) => m.t === 'pong'));
+    expect([...srv.sessions].some((s) => s.spectator)).toBe(false);
+
+    const spec = await connect(srv.port);
+    spec.send({ t: 'spectate' });
+    spec.send({ t: 'join', name: 'sneaky', skin: 0, animal: 0 });
+    spec.send({ t: 'ping' });
+    await waitFor(() => spec.msgs.some((m) => m.t === 'pong'));
+    expect(welcomeOf(spec)).toBeNull();
+    expect(srv.world.snakes.size).toBe(1);
+  });
+
+  it('keeps the world running when a spectator disconnects', async () => {
+    const srv = await boot();
+    const spec = await connect(srv.port);
+    spec.send({ t: 'spectate' });
+    await waitFor(() => spec.msgs.some((m) => m.t === 'overview'));
+    spec.ws.terminate();
+    await waitFor(() => srv.sessions.size === 0);
+    const ticks = srv.stats.ticks;
+    await waitFor(() => srv.stats.ticks > ticks + 3);
+  });
 });

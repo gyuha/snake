@@ -6,6 +6,8 @@ export const MAX_OVER_LIMIT_WINDOWS = 3;
 
 export class Session {
   readonly view: ViewState = newViewState();
+  /** Watches the whole world through overview messages; never owns a snake. */
+  spectator = false;
   private windowStart = 0;
   private windowCount = 0;
   private overLimitWindows = 0;
