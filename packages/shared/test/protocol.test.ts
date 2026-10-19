@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  C2S, ProtocolError, S2C, WORLD_RADIUS, Writer, decodeClient, decodeServerFrame, dequantizeCoord,
+  ANIMAL_COUNT, C2S, ProtocolError, S2C, WORLD_RADIUS, Writer, decodeClient, decodeServerFrame, dequantizeCoord,
   encodeClient, encodeServer, quantizeCoord, sanitizeName, type ClientMsg, type ServerMsg,
 } from '../src/index';
 
@@ -34,8 +34,8 @@ const serverMsgs: ServerMsg[] = [
   {
     t: 'overview',
     snakes: [
-      { id: 65534, skin: 7, name: '뱀왕😀', x: 0, y: 65535, score: 16777215 },
-      { id: 1, skin: 0, name: '', x: 32768, y: 100, score: 0 },
+      { id: 65534, skin: 7, animal: 5, name: '뱀왕😀', x: 0, y: 65535, ang: 65535, score: 16777215 },
+      { id: 1, skin: 0, animal: 0, name: '', x: 32768, y: 100, ang: 0, score: 0 },
     ],
   },
   { t: 'overview', snakes: [] },
@@ -125,8 +125,13 @@ describe('overview', () => {
     expect(() => decodeServerFrame(w.finish())).toThrow(ProtocolError);
   });
 
+  it('rejects an animal out of range', () => {
+    const w = new Writer().u8(S2C.OVERVIEW).u16(1).u16(1).u8(0).u8(ANIMAL_COUNT).str('a').u16(0).u16(0).u16(0).u24(0);
+    expect(() => decodeServerFrame(w.finish())).toThrow(ProtocolError);
+  });
+
   it('rejects a truncated snake list', () => {
-    const w = new Writer().u8(S2C.OVERVIEW).u16(2).u16(1).u8(0).str('a').u16(0).u16(0).u24(0);
+    const w = new Writer().u8(S2C.OVERVIEW).u16(2).u16(1).u8(0).u8(0).str('a').u16(0).u16(0).u16(0).u24(0);
     expect(() => decodeServerFrame(w.finish())).toThrow(ProtocolError);
   });
 

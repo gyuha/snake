@@ -27,11 +27,11 @@ export interface RankStyle {
   bold: boolean;
 }
 
-const PLAIN: RankStyle = { dotRadius: 5, labelPx: 11, ring: null, bold: false };
+const PLAIN: RankStyle = { dotRadius: 7, labelPx: 11, ring: null, bold: false };
 const PODIUM: readonly RankStyle[] = [
-  { dotRadius: 10, labelPx: 16, ring: '#ffd54a', bold: true },
-  { dotRadius: 8, labelPx: 14, ring: '#cfd8e3', bold: true },
-  { dotRadius: 7, labelPx: 13, ring: '#d98b4a', bold: true },
+  { dotRadius: 12, labelPx: 16, ring: '#ffd54a', bold: true },
+  { dotRadius: 10, labelPx: 14, ring: '#cfd8e3', bold: true },
+  { dotRadius: 9, labelPx: 13, ring: '#d98b4a', bold: true },
 ];
 
 /** Map style for the snake at 0-based rank `index`; only the top three stand out. */

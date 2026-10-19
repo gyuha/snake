@@ -1,5 +1,6 @@
-import { dequantizeCoord, type OverviewSnake } from '@snake/shared';
+import { dequantizeAngle16, dequantizeCoord, type OverviewSnake } from '@snake/shared';
 import { Connection } from './net/connection';
+import { drawEyes, drawHead } from './render/animals';
 import { SKINS } from './render/palette';
 import { fitWorld, rankStyle, worldToScreen } from './ui/overview-layout';
 
@@ -47,16 +48,22 @@ function drawMap(c: CanvasRenderingContext2D): void {
     const s = snakes[i]!;
     const style = rankStyle(i);
     const p = worldToScreen(layout, dequantizeCoord(s.x), dequantizeCoord(s.y));
+    const [body, stripe] = SKINS[s.skin] ?? ['#ffffff', '#ffffff'];
+    const ang = dequantizeAngle16(s.ang);
     c.beginPath();
     c.arc(p.x, p.y, style.dotRadius, 0, Math.PI * 2);
-    c.fillStyle = SKINS[s.skin]?.[0] ?? '#ffffff';
+    c.fillStyle = body;
     c.fill();
+    drawHead(c, s.animal, p, ang, style.dotRadius, body, stripe);
+    drawEyes(c, p, ang, style.dotRadius);
+    c.beginPath();
+    c.arc(p.x, p.y, style.dotRadius, 0, Math.PI * 2);
     c.lineWidth = style.ring ? 3 : 1.5;
     c.strokeStyle = style.ring ?? '#ffffff';
     c.stroke();
     c.font = `${style.bold ? '700 ' : ''}${style.labelPx}px system-ui, sans-serif`;
     c.fillStyle = style.ring ?? '#e8ecf3';
-    c.fillText(style.ring ? `${i + 1}위 ${s.name}` : s.name, p.x + style.dotRadius + 4, p.y);
+    c.fillText(style.ring ? `${i + 1}위 ${s.name}` : s.name, p.x + style.dotRadius * 1.6 + 4, p.y);
   }
 }
 

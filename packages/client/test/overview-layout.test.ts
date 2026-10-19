@@ -43,7 +43,7 @@ describe('rankStyle', () => {
   it('keeps every snake from fourth place on at the plain default', () => {
     const fourth = rankStyle(3);
     expect(fourth).toEqual(rankStyle(30));
-    expect(fourth).toEqual({ dotRadius: 5, labelPx: 11, ring: null, bold: false });
+    expect(fourth).toEqual({ dotRadius: 7, labelPx: 11, ring: null, bold: false });
     expect(rankStyle(2).dotRadius).toBeGreaterThan(fourth.dotRadius);
     expect(rankStyle(2).labelPx).toBeGreaterThan(fourth.labelPx);
   });

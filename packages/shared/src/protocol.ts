@@ -49,13 +49,15 @@ export interface SnakeRank {
   rank: number;
 }
 
-/** One snake in the spectator overview; x/y are quantized with quantizeCoord. */
+/** One snake in the spectator overview; x/y are quantized with quantizeCoord, ang with quantizeAngle16. */
 export interface OverviewSnake {
   id: number;
   skin: number;
+  animal: number;
   name: string;
   x: number;
   y: number;
+  ang: number;
   score: number;
 }
 
@@ -357,7 +359,7 @@ export function encodeServer(w: Writer, msg: ServerMsg): void {
       break;
     case 'overview':
       w.u8(S2C.OVERVIEW).u16(msg.snakes.length);
-      for (const s of msg.snakes) w.u16(s.id).u8(s.skin).str(s.name).u16(s.x).u16(s.y).u24(s.score);
+      for (const s of msg.snakes) w.u16(s.id).u8(s.skin).u8(s.animal).str(s.name).u16(s.x).u16(s.y).u16(s.ang).u24(s.score);
       break;
     case 'pong':
       w.u8(S2C.PONG);
@@ -436,7 +438,9 @@ function decodeServerMsg(r: Reader): ServerMsg {
         const id = r.u16();
         const skin = r.u8();
         if (skin >= SKIN_COUNT) throw new ProtocolError(`skin out of range: ${skin}`);
-        snakes.push({ id, skin, name: r.str(), x: r.u16(), y: r.u16(), score: r.u24() });
+        const animal = r.u8();
+        if (animal >= ANIMAL_COUNT) throw new ProtocolError(`animal out of range: ${animal}`);
+        snakes.push({ id, skin, animal, name: r.str(), x: r.u16(), y: r.u16(), ang: r.u16(), score: r.u24() });
       }
       return { t: 'overview', snakes };
     }
