@@ -1,12 +1,11 @@
 import { dequantizeCoord, type OverviewSnake } from '@snake/shared';
 import { Connection } from './net/connection';
 import { SKINS } from './render/palette';
-import { fitWorld, worldToScreen } from './ui/overview-layout';
+import { fitWorld, rankStyle, worldToScreen } from './ui/overview-layout';
 
 const WS_URL: string = import.meta.env.VITE_WS_URL ?? `ws://${location.hostname}:8080`;
 const RECONNECT_MS = 2000;
 const MAP_MARGIN = 24;
-const DOT_RADIUS = 5;
 
 function el<T extends HTMLElement = HTMLElement>(id: string): T {
   const e = document.getElementById(id);
@@ -42,19 +41,22 @@ function drawMap(c: CanvasRenderingContext2D): void {
   c.strokeStyle = '#3a4558';
   c.stroke();
 
-  c.font = '11px system-ui, sans-serif';
   c.textBaseline = 'middle';
-  for (const s of snakes) {
+  // Snakes arrive best first; draw in reverse so the podium sits on top of the rest.
+  for (let i = snakes.length - 1; i >= 0; i--) {
+    const s = snakes[i]!;
+    const style = rankStyle(i);
     const p = worldToScreen(layout, dequantizeCoord(s.x), dequantizeCoord(s.y));
     c.beginPath();
-    c.arc(p.x, p.y, DOT_RADIUS, 0, Math.PI * 2);
+    c.arc(p.x, p.y, style.dotRadius, 0, Math.PI * 2);
     c.fillStyle = SKINS[s.skin]?.[0] ?? '#ffffff';
     c.fill();
-    c.lineWidth = 1.5;
-    c.strokeStyle = '#ffffff';
+    c.lineWidth = style.ring ? 3 : 1.5;
+    c.strokeStyle = style.ring ?? '#ffffff';
     c.stroke();
-    c.fillStyle = '#e8ecf3';
-    c.fillText(s.name, p.x + DOT_RADIUS + 3, p.y);
+    c.font = `${style.bold ? '700 ' : ''}${style.labelPx}px system-ui, sans-serif`;
+    c.fillStyle = style.ring ?? '#e8ecf3';
+    c.fillText(style.ring ? `${i + 1}위 ${s.name}` : s.name, p.x + style.dotRadius + 4, p.y);
   }
 }
 

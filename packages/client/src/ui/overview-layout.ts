@@ -19,3 +19,22 @@ export function worldToScreen(layout: MapLayout, x: number, y: number): { x: num
     y: layout.cy + (y - WORLD_RADIUS) * layout.scale,
   };
 }
+
+export interface RankStyle {
+  dotRadius: number;
+  labelPx: number;
+  ring: string | null;
+  bold: boolean;
+}
+
+const PLAIN: RankStyle = { dotRadius: 5, labelPx: 11, ring: null, bold: false };
+const PODIUM: readonly RankStyle[] = [
+  { dotRadius: 10, labelPx: 16, ring: '#ffd54a', bold: true },
+  { dotRadius: 8, labelPx: 14, ring: '#cfd8e3', bold: true },
+  { dotRadius: 7, labelPx: 13, ring: '#d98b4a', bold: true },
+];
+
+/** Map style for the snake at 0-based rank `index`; only the top three stand out. */
+export function rankStyle(index: number): RankStyle {
+  return PODIUM[index] ?? PLAIN;
+}

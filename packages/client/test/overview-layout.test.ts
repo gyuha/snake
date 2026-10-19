@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { WORLD_RADIUS } from '@snake/shared';
-import { fitWorld, worldToScreen } from '../src/ui/overview-layout';
+import { fitWorld, rankStyle, worldToScreen } from '../src/ui/overview-layout';
 
 describe('overview layout', () => {
   it('centers the world circle in a non-square area using the shorter side', () => {
@@ -26,5 +26,25 @@ describe('overview layout', () => {
     const l = fitWorld(100, 100, 80);
     expect(l.radius).toBe(1);
     expect(l.scale).toBeGreaterThan(0);
+  });
+});
+
+describe('rankStyle', () => {
+  it('makes the top three progressively smaller, with gold, silver and bronze rings', () => {
+    const [first, second, third] = [0, 1, 2].map(rankStyle);
+    expect(first!.dotRadius).toBeGreaterThan(second!.dotRadius);
+    expect(second!.dotRadius).toBeGreaterThan(third!.dotRadius);
+    expect(first!.labelPx).toBeGreaterThan(second!.labelPx);
+    expect(second!.labelPx).toBeGreaterThan(third!.labelPx);
+    expect(new Set([first!.ring, second!.ring, third!.ring]).size).toBe(3);
+    expect([first, second, third].every((s) => s!.ring !== null && s!.bold)).toBe(true);
+  });
+
+  it('keeps every snake from fourth place on at the plain default', () => {
+    const fourth = rankStyle(3);
+    expect(fourth).toEqual(rankStyle(30));
+    expect(fourth).toEqual({ dotRadius: 5, labelPx: 11, ring: null, bold: false });
+    expect(rankStyle(2).dotRadius).toBeGreaterThan(fourth.dotRadius);
+    expect(rankStyle(2).labelPx).toBeGreaterThan(fourth.labelPx);
   });
 });
