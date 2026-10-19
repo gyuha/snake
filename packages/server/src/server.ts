@@ -83,6 +83,7 @@ export async function startServer(opts: ServerOptions): Promise<GameServer> {
         own?.setInput(own.wang, msg.on);
         return;
       case 'spectate':
+        // Until this arrives the socket is an ordinary pre-join viewer and may get one view frame.
         if (own) return;
         session.spectator = true;
         return;

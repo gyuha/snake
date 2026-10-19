@@ -171,6 +171,11 @@ describe('game server', () => {
     expect(ov.snakes.map((s) => s.name)).toEqual(['alpha']);
     expect(srv.world.snakes.size).toBe(1);
 
+    // A tick can land between connect and the spectate message (start-screen viewers get view frames),
+    // so only frames after the first overview count.
+    spec.msgs.length = 0;
+    const ticks = srv.stats.ticks;
+    await waitFor(() => srv.stats.ticks > ticks + 12);
     spec.send({ t: 'ping' });
     await waitFor(() => spec.msgs.some((m) => m.t === 'pong'));
     const kinds = new Set(spec.msgs.map((m) => m.t));
