@@ -1,5 +1,5 @@
 <!-- forge-slug: status-round-control -->
-<!-- task: 14 -->
+<!-- task: 1 -->
 <!-- tdd: on -->
 # status.html에서 시간제한 라운드 시작·종료 컨트롤
 
