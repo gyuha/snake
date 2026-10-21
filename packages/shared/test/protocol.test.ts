@@ -11,6 +11,9 @@ const clientMsgs: ClientMsg[] = [
   { t: 'boost', on: false },
   { t: 'ping' },
   { t: 'spectate' },
+  { t: 'startRound', minutes: 10, bots: 30 },
+  { t: 'startRound', minutes: 60, bots: 100 },
+  { t: 'startRound', minutes: 1, bots: 0 },
 ];
 
 const serverMsgs: ServerMsg[] = [
@@ -39,6 +42,11 @@ const serverMsgs: ServerMsg[] = [
     ],
   },
   { t: 'overview', snakes: [] },
+  { t: 'serverInfo', hosts: ['192.168.0.74', '10.0.0.5'] },
+  { t: 'serverInfo', hosts: [] },
+  { t: 'round', state: 'none', seq: 0, remainingMs: 0 },
+  { t: 'round', state: 'running', seq: 255, remainingMs: 3600000 },
+  { t: 'round', state: 'ended', seq: 7, remainingMs: 0 },
   { t: 'pong' },
 ];
 
@@ -116,6 +124,23 @@ describe('sanitizeName', () => {
     expect(emoji).toBe('😀'.repeat(6));
     expect(new TextEncoder().encode(emoji).length).toBeLessThanOrEqual(24);
     expect(emoji.includes('�')).toBe(false);
+  });
+});
+
+describe('round', () => {
+  it('startRound carries a minutes byte and a bots byte', () => {
+    expect(Array.from(encodeClient({ t: 'startRound', minutes: 7, bots: 42 }))).toEqual([C2S.START_ROUND, 7, 42]);
+    expect(() => decodeClient(Uint8Array.from([C2S.START_ROUND, 7]))).toThrow(ProtocolError);
+    expect(() => decodeClient(Uint8Array.from([C2S.START_ROUND, 7, 42, 0]))).toThrow(ProtocolError);
+  });
+
+  it('rejects an unknown round state', () => {
+    const w = new Writer().u8(S2C.ROUND).u8(3).u8(0).u24(0);
+    expect(() => decodeServerFrame(w.finish())).toThrow(ProtocolError);
+  });
+
+  it('refuses a remaining time that does not fit u24', () => {
+    expect(() => encodeServer(new Writer(), { t: 'round', state: 'running', seq: 0, remainingMs: 0x1000000 })).toThrow(ProtocolError);
   });
 });
 

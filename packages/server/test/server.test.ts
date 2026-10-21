@@ -2,7 +2,7 @@ import { once } from 'node:events';
 import { afterEach, describe, expect, it } from 'vitest';
 import { WebSocket } from 'ws';
 import {
-  NO_KILLER, decodeServerFrame, encodeClient, quantizeAngle16, type ClientMsg, type ServerMsg,
+  NO_KILLER, START_SEGMENTS, decodeServerFrame, score, encodeClient, quantizeAngle16, type ClientMsg, type ServerMsg,
 } from '@snake/shared';
 import { startServer, type GameServer } from '../src/server';
 import { seededRng } from './helpers';
@@ -184,6 +184,20 @@ describe('game server', () => {
     }
   });
 
+  it('tells a spectator, and only a spectator, the addresses the server can be reached at', async () => {
+    server = await startServer({ port: 0, rng: seededRng(11), initialFood: 500, lanHosts: ['192.168.0.74', '10.0.0.5'] });
+    const spec = await connect(server.port);
+    spec.send({ t: 'spectate' });
+    await waitFor(() => spec.msgs.some((m) => m.t === 'serverInfo'));
+    expect(spec.msgs.find((m) => m.t === 'serverInfo')).toEqual({ t: 'serverInfo', hosts: ['192.168.0.74', '10.0.0.5'] });
+
+    const player = await connect(server.port);
+    player.send({ t: 'join', name: 'p', skin: 0, animal: 0 });
+    player.send({ t: 'ping' });
+    await waitFor(() => player.msgs.some((m) => m.t === 'pong'));
+    expect(player.msgs.some((m) => m.t === 'serverInfo')).toBe(false);
+  });
+
   it('a playing session cannot become a spectator and a spectator cannot join', async () => {
     const srv = await boot();
     const player = await connect(srv.port);
@@ -212,5 +226,151 @@ describe('game server', () => {
     await waitFor(() => srv.sessions.size === 0);
     const ticks = srv.stats.ticks;
     await waitFor(() => srv.stats.ticks > ticks + 3);
+  });
+
+  describe('rounds', () => {
+    let clock = 0;
+    let beforeTicks = 0;
+
+    let botTargets: number[] = [];
+
+    async function bootRound(): Promise<GameServer> {
+      clock = 1_000_000;
+      beforeTicks = 0;
+      botTargets = [];
+      server = await startServer({
+        port: 0, rng: seededRng(11), initialFood: 500, now: () => clock, beforeTick: () => { beforeTicks++; },
+        onStartRound: (bots) => botTargets.push(bots),
+      });
+      return server;
+    }
+
+    const roundOf = (c: TestClient) => {
+      const rounds = c.msgs.filter((m) => m.t === 'round');
+      const last = rounds[rounds.length - 1];
+      return last && last.t === 'round' ? last : null;
+    };
+
+    async function spectator(port: number): Promise<TestClient> {
+      const spec = await connect(port);
+      spec.send({ t: 'spectate' });
+      await waitFor(() => roundOf(spec) !== null);
+      return spec;
+    }
+
+    it('tells every new connection that no round exists yet', async () => {
+      const srv = await bootRound();
+      const spec = await spectator(srv.port);
+      expect(roundOf(spec)).toEqual({ t: 'round', state: 'none', seq: 0, remainingMs: 0 });
+      const player = await connect(srv.port);
+      await waitFor(() => roundOf(player) !== null);
+      expect(roundOf(player)?.state).toBe('none');
+    });
+
+    it('starts a round for a spectator request and respawns the players snakes without a death', async () => {
+      const srv = await bootRound();
+      const player = await connect(srv.port);
+      player.send({ t: 'join', name: 'alpha', skin: 1, animal: 2 });
+      await waitFor(() => welcomeOf(player) !== null);
+      const before = welcomeOf(player)!.selfId;
+      const spec = await spectator(srv.port);
+
+      spec.send({ t: 'startRound', minutes: 2, bots: 30 });
+      await waitFor(() => roundOf(spec)?.state === 'running');
+      expect(roundOf(spec)?.remainingMs).toBe(120_000);
+      expect(roundOf(spec)?.seq).toBe(1);
+      await waitFor(() => roundOf(player)?.state === 'running');
+      await waitFor(() => player.msgs.filter((m) => m.t === 'welcome').length === 2);
+      const ws = player.msgs.filter((m) => m.t === 'welcome');
+      expect(ws[1] && ws[1].t === 'welcome' && ws[1].selfId).not.toBe(before);
+      expect(player.msgs.some((m) => m.t === 'death')).toBe(false);
+
+      const [mine] = [...srv.world.snakes.values()];
+      expect(srv.world.snakes.size).toBe(1);
+      expect(mine).toMatchObject({ name: 'alpha', skin: 1, animal: 2 });
+      expect(mine!.score).toBe(score(START_SEGMENTS, 0));
+    });
+
+    it('numbers each start so clients can tell a restart from a repeated broadcast', async () => {
+      const srv = await bootRound();
+      const spec = await spectator(srv.port);
+      spec.send({ t: 'startRound', minutes: 5, bots: 30 });
+      await waitFor(() => roundOf(spec)?.seq === 1);
+      spec.send({ t: 'startRound', minutes: 5, bots: 30 });
+      await waitFor(() => roundOf(spec)?.seq === 2);
+    });
+
+    it('hands the requested bot count to the host on each start, 0 to 100 inclusive', async () => {
+      const srv = await bootRound();
+      const spec = await spectator(srv.port);
+      for (const bots of [0, 100, 57]) {
+        spec.send({ t: 'startRound', minutes: 1, bots });
+      }
+      await waitFor(() => botTargets.length === 3);
+      expect(botTargets).toEqual([0, 100, 57]);
+    });
+
+    it('ignores a bot count above 100', async () => {
+      const srv = await bootRound();
+      const spec = await spectator(srv.port);
+      spec.send({ t: 'startRound', minutes: 1, bots: 101 });
+      spec.send({ t: 'startRound', minutes: 1, bots: 255 });
+      spec.send({ t: 'ping' });
+      await waitFor(() => spec.msgs.some((m) => m.t === 'pong'));
+      expect(roundOf(spec)?.state).toBe('none');
+      expect(botTargets).toEqual([]);
+    });
+
+    it('ignores minutes outside 1..60 and requests from non-spectators', async () => {
+      const srv = await bootRound();
+      const spec = await spectator(srv.port);
+      for (const minutes of [0, 61, 255]) spec.send({ t: 'startRound', minutes, bots: 30 });
+      const player = await connect(srv.port);
+      player.send({ t: 'startRound', minutes: 5, bots: 30 });
+      player.send({ t: 'ping' });
+      spec.send({ t: 'ping' });
+      await waitFor(() => player.msgs.some((m) => m.t === 'pong') && spec.msgs.some((m) => m.t === 'pong'));
+      expect(roundOf(spec)?.state).toBe('none');
+      expect(roundOf(player)?.state).toBe('none');
+    });
+
+    it('freezes the world and refuses joins once the time is up, until a new round starts', async () => {
+      const srv = await bootRound();
+      const spec = await spectator(srv.port);
+      spec.send({ t: 'startRound', minutes: 1, bots: 30 });
+      await waitFor(() => roundOf(spec)?.state === 'running');
+
+      clock += 60_000;
+      await waitFor(() => roundOf(spec)?.state === 'ended');
+      expect(roundOf(spec)?.remainingMs).toBe(0);
+
+      const frozenAt = beforeTicks;
+      const ticks = srv.stats.ticks;
+      await waitFor(() => srv.stats.ticks > ticks + 5);
+      expect(beforeTicks).toBe(frozenAt);
+
+      const late = await connect(srv.port);
+      await waitFor(() => roundOf(late)?.state === 'ended');
+      late.send({ t: 'join', name: 'late', skin: 0, animal: 0 });
+      late.send({ t: 'ping' });
+      await waitFor(() => late.msgs.some((m) => m.t === 'pong'));
+      expect(welcomeOf(late)).toBeNull();
+
+      spec.send({ t: 'startRound', minutes: 1, bots: 30 });
+      await waitFor(() => roundOf(spec)?.state === 'running');
+      late.send({ t: 'join', name: 'late', skin: 0, animal: 0 });
+      await waitFor(() => welcomeOf(late) !== null);
+      await waitFor(() => beforeTicks > frozenAt);
+    });
+
+    it('restarts a running round with a fresh countdown', async () => {
+      const srv = await bootRound();
+      const spec = await spectator(srv.port);
+      spec.send({ t: 'startRound', minutes: 5, bots: 30 });
+      await waitFor(() => roundOf(spec)?.state === 'running');
+      clock += 90_000;
+      spec.send({ t: 'startRound', minutes: 3, bots: 30 });
+      await waitFor(() => roundOf(spec)?.remainingMs === 180_000);
+    });
   });
 });

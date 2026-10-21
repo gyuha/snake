@@ -2,7 +2,7 @@ import { ANIMAL_COUNT, MAX_NAME_BYTES, MINIMAP_SIZE, SKIN_COUNT, WORLD_RADIUS } 
 
 export class ProtocolError extends Error {}
 
-export const C2S = { JOIN: 0x01, STEER: 0x02, BOOST: 0x03, PING: 0x04, SPECTATE: 0x05 } as const;
+export const C2S = { JOIN: 0x01, STEER: 0x02, BOOST: 0x03, PING: 0x04, SPECTATE: 0x05, START_ROUND: 0x06 } as const;
 
 export const S2C = {
   WELCOME: 0x10,
@@ -22,6 +22,8 @@ export const S2C = {
   DEATH: 0x32,
   PONG: 0x33,
   OVERVIEW: 0x34,
+  ROUND: 0x35,
+  SERVER_INFO: 0x36,
 } as const;
 
 export type ClientMsg =
@@ -29,7 +31,11 @@ export type ClientMsg =
   | { t: 'steer'; angle: number }
   | { t: 'boost'; on: boolean }
   | { t: 'ping' }
-  | { t: 'spectate' };
+  | { t: 'spectate' }
+  | { t: 'startRound'; minutes: number; bots: number };
+
+export const ROUND_STATES = ['none', 'running', 'ended'] as const;
+export type RoundState = (typeof ROUND_STATES)[number];
 
 export interface FoodWire {
   rx: number;
@@ -90,6 +96,8 @@ export type ServerMsg =
   | { t: 'minimap'; bits: Uint8Array }
   | { t: 'death'; killerId: number; finalScore: number }
   | { t: 'overview'; snakes: OverviewSnake[] }
+  | { t: 'round'; state: RoundState; seq: number; remainingMs: number }
+  | { t: 'serverInfo'; hosts: string[] }
   | { t: 'pong' };
 
 const MINIMAP_BYTES = (MINIMAP_SIZE * MINIMAP_SIZE) / 8;
@@ -260,6 +268,9 @@ export function encodeClient(msg: ClientMsg): Uint8Array {
     case 'spectate':
       w.u8(C2S.SPECTATE);
       break;
+    case 'startRound':
+      w.u8(C2S.START_ROUND).u8(msg.minutes).u8(msg.bots);
+      break;
   }
   return w.finish();
 }
@@ -293,6 +304,9 @@ export function decodeClient(buf: Uint8Array): ClientMsg {
       break;
     case C2S.SPECTATE:
       msg = { t: 'spectate' };
+      break;
+    case C2S.START_ROUND:
+      msg = { t: 'startRound', minutes: r.u8(), bots: r.u8() };
       break;
     default:
       throw new ProtocolError(`unknown client opcode: ${op}`);
@@ -360,6 +374,13 @@ export function encodeServer(w: Writer, msg: ServerMsg): void {
     case 'overview':
       w.u8(S2C.OVERVIEW).u16(msg.snakes.length);
       for (const s of msg.snakes) w.u16(s.id).u8(s.skin).u8(s.animal).str(s.name).u16(s.x).u16(s.y).u16(s.ang).u24(s.score);
+      break;
+    case 'round':
+      w.u8(S2C.ROUND).u8(ROUND_STATES.indexOf(msg.state)).u8(msg.seq).u24(msg.remainingMs);
+      break;
+    case 'serverInfo':
+      w.u8(S2C.SERVER_INFO).u8(msg.hosts.length);
+      for (const h of msg.hosts) w.str(h);
       break;
     case 'pong':
       w.u8(S2C.PONG);
@@ -443,6 +464,17 @@ function decodeServerMsg(r: Reader): ServerMsg {
         snakes.push({ id, skin, animal, name: r.str(), x: r.u16(), y: r.u16(), ang: r.u16(), score: r.u24() });
       }
       return { t: 'overview', snakes };
+    }
+    case S2C.ROUND: {
+      const state = ROUND_STATES[r.u8()];
+      if (!state) throw new ProtocolError('unknown round state');
+      return { t: 'round', state, seq: r.u8(), remainingMs: r.u24() };
+    }
+    case S2C.SERVER_INFO: {
+      const n = r.u8();
+      const hosts: string[] = [];
+      for (let i = 0; i < n; i++) hosts.push(r.str());
+      return { t: 'serverInfo', hosts };
     }
     case S2C.PONG:
       return { t: 'pong' };

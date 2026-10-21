@@ -1,8 +1,14 @@
-import { dequantizeAngle16, dequantizeCoord, type OverviewSnake } from '@snake/shared';
+import {
+  BOT_MAX, ROUND_MAX_MINUTES, ROUND_MIN_MINUTES, dequantizeAngle16, dequantizeCoord, type OverviewSnake,
+} from '@snake/shared';
 import { Connection } from './net/connection';
 import { drawEyes, drawHead } from './render/animals';
 import { SKINS } from './render/palette';
+import { gameUrl } from './ui/game-url';
+import { drawQr } from './ui/qr';
 import { fitWorld, rankStyle, worldToScreen } from './ui/overview-layout';
+import { RoundClock, formatClock } from './ui/round-clock';
+import { playStartBanner } from './ui/start-banner';
 
 const WS_URL: string = import.meta.env.VITE_WS_URL ?? `ws://${location.hostname}:8080`;
 const RECONNECT_MS = 2000;
@@ -17,10 +23,38 @@ function el<T extends HTMLElement = HTMLElement>(id: string): T {
 const canvas = el<HTMLCanvasElement>('map');
 const board = el('board');
 const lost = el('lost');
+const clockEl = el('clock');
+const banner = el('start-banner');
+const endedEl = el('ended');
+const winnerEl = el('winner');
+const minutesInput = el<HTMLInputElement>('minutes');
+const botsInput = el<HTMLInputElement>('bots');
+const startBtn = el<HTMLButtonElement>('start');
 const ctx = canvas.getContext('2d');
 if (!ctx) throw new Error('2d canvas unavailable');
 
 let snakes: OverviewSnake[] = [];
+let conn: Connection | null = null;
+const round = new RoundClock();
+
+function minutesValue(): number | null {
+  const v = Number(minutesInput.value);
+  return Number.isInteger(v) && v >= ROUND_MIN_MINUTES && v <= ROUND_MAX_MINUTES ? v : null;
+}
+
+function botsValue(): number | null {
+  const v = Number(botsInput.value);
+  return Number.isInteger(v) && v >= 0 && v <= BOT_MAX ? v : null;
+}
+
+function drawRound(): void {
+  clockEl.hidden = round.state !== 'running';
+  clockEl.textContent = formatClock(round.remaining(performance.now()));
+  endedEl.hidden = round.state !== 'ended';
+  const top = snakes[0];
+  winnerEl.textContent = round.state === 'ended' && top ? `1위 ${top.name} · ${top.score}점` : '';
+  startBtn.disabled = minutesValue() === null || botsValue() === null;
+}
 
 function drawMap(c: CanvasRenderingContext2D): void {
   const dpr = window.devicePixelRatio || 1;
@@ -86,13 +120,19 @@ function drawBoard(): void {
 const render = (): void => {
   drawMap(ctx);
   drawBoard();
+  drawRound();
 };
 
 function connect(): void {
-  const conn = new Connection(
+  const c = new Connection(
     WS_URL,
     (msgs) => {
       for (const msg of msgs) {
+        if (msg.t === 'round') {
+          if (round.apply(msg.state, msg.seq, msg.remainingMs, performance.now())) playStartBanner(banner);
+          drawRound();
+        }
+        if (msg.t === 'serverInfo') drawGameLink(msg.hosts);
         if (msg.t !== 'overview') continue;
         snakes = msg.snakes;
         lost.hidden = true;
@@ -104,8 +144,25 @@ function connect(): void {
       setTimeout(connect, RECONNECT_MS);
     },
   );
-  conn.whenOpen().then(() => conn.send({ t: 'spectate' })).catch(() => {});
+  conn = c;
+  c.whenOpen().then(() => c.send({ t: 'spectate' })).catch(() => {});
 }
+
+startBtn.addEventListener('click', () => {
+  const minutes = minutesValue();
+  const bots = botsValue();
+  if (minutes !== null && bots !== null) conn?.send({ t: 'startRound', minutes, bots });
+});
+minutesInput.addEventListener('input', drawRound);
+botsInput.addEventListener('input', drawRound);
+setInterval(drawRound, 250);
+
+function drawGameLink(lanHosts: string[]): void {
+  const url = gameUrl(location, lanHosts);
+  el('qr-url').textContent = url;
+  drawQr(el<HTMLCanvasElement>('qr'), url, 264);
+}
+drawGameLink([]);
 
 window.addEventListener('resize', () => drawMap(ctx));
 render();

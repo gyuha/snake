@@ -4,7 +4,11 @@ import { startServer } from './server';
 
 const port = Number(process.env.PORT ?? 8080);
 const bots = new BotController();
-const server = await startServer({ port, beforeTick: (world, tick) => bots.update(world, tick) });
+const server = await startServer({
+  port,
+  beforeTick: (world, tick) => bots.update(world, tick),
+  onStartRound: (count) => bots.setTarget(count),
+});
 // Bots spawn on the first tick, so report the target rather than the current count.
 console.log(`[server] listening on ws://localhost:${server.port} (bots: ${BOT_TARGET})`);
 

@@ -20,16 +20,56 @@
       #board li:nth-child(3) { font-size: 15px; color: #d98b4a; }
       #board li .score { float: right; opacity: 0.8; }
       #board li .name { overflow-wrap: anywhere; }
+      #clock { position: fixed; left: calc((100% - var(--panel-w)) / 2); top: 12px; transform: translateX(-50%); padding: 2px 18px; border-radius: 10px; background: rgba(0, 0, 0, 0.45); font-size: 40px; font-weight: 700; font-variant-numeric: tabular-nums; }
+      #clock[hidden] { display: none; }
+      #controls { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 12px; }
+      #minutes { width: 56px; box-sizing: border-box; padding: 6px 8px; border-radius: 6px; border: 1px solid #3a4558; background: #0f141c; color: inherit; font-size: 14px; }
+      #bots { width: 52px; box-sizing: border-box; padding: 6px 8px; border-radius: 6px; border: 1px solid #3a4558; background: #0f141c; color: inherit; font-size: 14px; }
+      #start { padding: 6px 14px; border: 0; border-radius: 6px; background: #2f7d4f; color: #fff; font-weight: 700; cursor: pointer; }
+      #start:disabled { opacity: 0.4; cursor: default; }
+      #ended { position: fixed; left: 0; top: 0; bottom: 0; right: var(--panel-w); display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(8, 10, 16, 0.6); text-align: center; }
+      #ended[hidden] { display: none; }
+      #ended-time { font-size: 120px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+      #ended-title { margin-top: 8px; font-size: 24px; opacity: 0.85; }
+      #winner { margin-top: 12px; font-size: 28px; font-weight: 700; color: #ffd54a; overflow-wrap: anywhere; }
+      #winner:empty { display: none; }
+      @keyframes banner { 0% { opacity: 0; transform: scale(0.85); } 12% { opacity: 1; transform: scale(1); } 72% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: scale(1.04); } }
+      #start-banner { position: fixed; display: flex; align-items: center; justify-content: center; pointer-events: none; z-index: 10; opacity: 0; font-size: clamp(64px, 14vw, 160px); font-weight: 800; white-space: nowrap; text-shadow: 0 6px 32px rgba(0, 0, 0, 0.7); }
+      #start-banner.play { animation: banner 1.5s ease-out forwards; }
+      #start-banner { left: 0; top: 0; bottom: 0; right: var(--panel-w); }
+      #qr-box { position: fixed; left: 12px; bottom: 12px; padding: 12px 12px 8px; border-radius: 10px; background: #ffffff; color: #10141c; text-align: center; font-size: 12px; line-height: 1.3; }
+      #qr { display: block; width: 132px; height: 132px; margin: 0 auto; image-rendering: pixelated; }
+      #qr-box b { display: block; margin-top: 6px; font-size: 13px; }
+      #qr-url { font-size: 11px; white-space: nowrap; opacity: 0.7; }
       #lost { position: fixed; left: 12px; top: 12px; padding: 6px 12px; border-radius: 8px; background: #b3412f; font-size: 14px; }
       #lost[hidden] { display: none; }
     </style>
   </head>
   <body>
     <canvas id="map"></canvas>
+    <div id="clock" hidden>10:00</div>
+    <div id="ended" hidden>
+      <div id="ended-time">00:00</div>
+      <div id="ended-title">게임 종료</div>
+      <div id="winner"></div>
+    </div>
     <aside id="panel">
+      <div id="controls">
+        <input id="minutes" type="number" min="1" max="60" value="10" step="1" aria-label="라운드 시간(분)" />
+        <span>분</span>
+        <input id="bots" type="number" min="0" max="100" value="30" step="1" aria-label="봇 수" />
+        <span>봇</span>
+        <button id="start" type="button">시작</button>
+      </div>
       <h1>순위</h1>
       <ol id="board"></ol>
     </aside>
+    <div id="qr-box">
+      <canvas id="qr"></canvas>
+      <b>게임 접속</b>
+      <div id="qr-url"></div>
+    </div>
+    <div id="start-banner">게임 시작</div>
     <div id="lost" hidden>연결 끊김 — 재접속 중…</div>
     <script type="module" src="/src/status.ts"></script>
   </body>
