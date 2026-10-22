@@ -129,6 +129,7 @@ export class World {
     }
     for (const h of hits) this.removeSnake(h.victim, h.killerId);
 
+    this.food.expire(dt);
     const missing = NATURAL_FOOD_TARGET - this.food.naturalCount;
     if (missing > 0) this.food.spawnNatural(Math.min(FOOD_RESPAWN_PER_TICK, missing));
 

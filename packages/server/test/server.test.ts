@@ -291,6 +291,24 @@ describe('game server', () => {
       expect(mine!.score).toBe(score(START_SEGMENTS, 0));
     });
 
+    it('0 minutes starts a new free game every time', async () => {
+      const srv = await bootRound();
+      const spec = await spectator(srv.port);
+      spec.send({ t: 'startRound', minutes: 5, bots: 30 });
+      await waitFor(() => roundOf(spec)?.seq === 1);
+
+      spec.send({ t: 'startRound', minutes: 0, bots: 20 });
+      await waitFor(() => roundOf(spec)?.seq === 2);
+      expect(roundOf(spec)).toMatchObject({ state: 'none', remainingMs: 0 });
+      clock += 10 * 60_000;
+      await new Promise((r) => setTimeout(r, 100));
+      expect(roundOf(spec)?.state).toBe('none');
+
+      spec.send({ t: 'startRound', minutes: 0, bots: 12 });
+      await waitFor(() => roundOf(spec)?.seq === 3);
+      expect(botTargets).toEqual([30, 20, 12]);
+    });
+
     it('numbers each start so clients can tell a restart from a repeated broadcast', async () => {
       const srv = await bootRound();
       const spec = await spectator(srv.port);
@@ -321,10 +339,10 @@ describe('game server', () => {
       expect(botTargets).toEqual([]);
     });
 
-    it('ignores minutes outside 1..60 and requests from non-spectators', async () => {
+    it('ignores minutes above 60 and requests from non-spectators', async () => {
       const srv = await bootRound();
       const spec = await spectator(srv.port);
-      for (const minutes of [0, 61, 255]) spec.send({ t: 'startRound', minutes, bots: 30 });
+      for (const minutes of [61, 255]) spec.send({ t: 'startRound', minutes, bots: 30 });
       const player = await connect(srv.port);
       player.send({ t: 'startRound', minutes: 5, bots: 30 });
       player.send({ t: 'ping' });

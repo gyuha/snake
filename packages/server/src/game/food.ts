@@ -1,6 +1,6 @@
 import {
-  FOOD_COLORS, NATURAL_FOOD_VALUE_PER_SIZE, SECTOR_SIZE, TAU, WORLD_RADIUS, foodId, foodPos,
-  sectorCoord, sectorKey,
+  FOOD_COLORS, NATURAL_FOOD_LIFETIME, NATURAL_FOOD_VALUE_PER_SIZE, NO_KILLER, SECTOR_SIZE, TAU,
+  WORLD_RADIUS, foodId, foodPos, sectorCoord, sectorKey,
 } from '@snake/shared';
 
 export type FoodKind = 'natural' | 'death' | 'boost';
@@ -17,6 +17,8 @@ export interface Food {
   color: number;
   value: number;
   kind: FoodKind;
+  /** FoodStore clock time at which the food despawns; unset means it never does. */
+  expiresAt?: number;
 }
 
 export interface FoodEaten {
@@ -31,6 +33,8 @@ function toByte(offset: number): number {
 export class FoodStore {
   private readonly sectors = new Map<number, Map<number, Food>>();
   naturalCount = 0;
+  private time = 0;
+  private readonly natural = new Set<Food>();
   added: Food[] = [];
   eaten: FoodEaten[] = [];
 
@@ -55,7 +59,10 @@ export class FoodStore {
     const p = foodPos(sx, sy, rx, ry);
     const food: Food = { id, sx, sy, rx, ry, x: p.x, y: p.y, size, color, value, kind };
     cell.set(id, food);
-    if (kind === 'natural') this.naturalCount++;
+    if (kind === 'natural') {
+      this.naturalCount++;
+      this.natural.add(food);
+    }
     this.added.push(food);
     return food;
   }
@@ -63,8 +70,19 @@ export class FoodStore {
   remove(food: Food, eaterId: number): void {
     const cell = this.sectors.get(sectorKey(food.sx, food.sy));
     if (!cell || !cell.delete(food.id)) return;
-    if (food.kind === 'natural') this.naturalCount--;
+    if (food.kind === 'natural') {
+      this.naturalCount--;
+      this.natural.delete(food);
+    }
     this.eaten.push({ food, eaterId });
+  }
+
+  /** Advances the clock and removes natural food past its lifetime (reported as eaten by NO_KILLER). */
+  expire(dt: number): void {
+    this.time += dt;
+    for (const f of this.natural) {
+      if (f.expiresAt !== undefined && f.expiresAt <= this.time) this.remove(f, NO_KILLER);
+    }
   }
 
   sectorFoods(sx: number, sy: number): Food[] {
@@ -108,7 +126,10 @@ export class FoodStore {
         size * NATURAL_FOOD_VALUE_PER_SIZE,
         'natural',
       );
-      if (f) placed++;
+      if (f) {
+        f.expiresAt = this.time + NATURAL_FOOD_LIFETIME * (0.5 + this.rng());
+        placed++;
+      }
     }
     return placed;
   }

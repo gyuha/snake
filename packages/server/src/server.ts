@@ -92,7 +92,7 @@ export async function startServer(opts: ServerOptions): Promise<GameServer> {
     for (const s of sessions) send(s, bytes);
   };
 
-  /** Scores restart from zero: every snake is replaced silently and players get a fresh one under their own name. */
+  /** 0 minutes starts a free game: state 'none', no clock and no end. Scores restart from zero: every snake is replaced silently and players get a fresh one under their own name. */
   const startRound = (minutes: number, bots: number): void => {
     opts.onStartRound?.(bots);
     const players = [...sessions].filter((s) => s.view.snake?.alive);
@@ -106,7 +106,7 @@ export async function startServer(opts: ServerOptions): Promise<GameServer> {
         segSpacing: SEG_SPACING, tickHz: TICK_HZ, mscps: MSCPS, maxSegments: MAX_SEGMENTS,
       }));
     }
-    round.state = 'running';
+    round.state = minutes === 0 ? 'none' : 'running';
     round.endsAt = now() + minutes * 60_000;
     round.seq = (round.seq + 1) & 0xff;
     broadcastRound();

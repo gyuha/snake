@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { NATURAL_FOOD_VALUE_PER_SIZE, WORLD_RADIUS, foodId, foodPos } from '@snake/shared';
+import {
+  NATURAL_FOOD_LIFETIME, NATURAL_FOOD_VALUE_PER_SIZE, NO_KILLER, WORLD_RADIUS, foodId, foodPos,
+} from '@snake/shared';
 import { FoodStore } from '../src/game/food';
 import { seededRng } from './helpers';
 
@@ -74,5 +76,27 @@ describe('FoodStore.spawnNatural', () => {
       expect(f.value).toBeCloseTo(f.size * NATURAL_FOOD_VALUE_PER_SIZE, 12);
       expect(f.kind).toBe('natural');
     }
+  });
+});
+
+describe('FoodStore.expire', () => {
+  it('removes natural food after its lifetime, reported as eaten by NO_KILLER', () => {
+    const store = new FoodStore(seededRng(1));
+    store.spawnNatural(20);
+    store.clearEvents();
+    store.expire(NATURAL_FOOD_LIFETIME * 0.4);
+    expect(store.naturalCount).toBe(20);
+    store.expire(NATURAL_FOOD_LIFETIME * 1.2); // past the 1.5× upper bound
+    expect(store.naturalCount).toBe(0);
+    expect(store.eaten).toHaveLength(20);
+    expect(store.eaten.every((e) => e.eaterId === NO_KILLER)).toBe(true);
+  });
+
+  it('never expires death or boost food', () => {
+    const store = new FoodStore();
+    store.add(C, C, 8, 0, 0.4, 'death');
+    store.add(C + 100, C, 3, 0, 0.1, 'boost');
+    store.expire(NATURAL_FOOD_LIFETIME * 10);
+    expect(store.eaten).toEqual([]);
   });
 });

@@ -13,7 +13,7 @@ describe('client status.html', () => {
 
   it('has the round controls, the countdown and the end overlay', () => {
     const html = read('status.html');
-    expect(html).toMatch(/<input[^>]*id="minutes"[^>]*type="number"[^>]*min="1"[^>]*max="60"[^>]*value="10"/);
+    expect(html).toMatch(/<input[^>]*id="minutes"[^>]*type="number"[^>]*min="0"[^>]*max="60"[^>]*value="10"/);
     expect(html).toMatch(/<input[^>]*id="bots"[^>]*type="number"[^>]*min="0"[^>]*max="100"[^>]*value="30"/);
     expect(html.indexOf('id="bots"')).toBeLessThan(html.indexOf('id="start"'));
     expect(html).toMatch(/<button[^>]*id="start"/);
