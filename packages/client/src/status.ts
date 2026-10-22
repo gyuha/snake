@@ -10,7 +10,7 @@ import { fitWorld, rankStyle, worldToScreen } from './ui/overview-layout';
 import { RoundClock, formatClock } from './ui/round-clock';
 import { playStartBanner } from './ui/start-banner';
 
-const WS_URL: string = import.meta.env.VITE_WS_URL ?? `ws://${location.hostname}:8080`;
+const WS_URL: string = import.meta.env.VITE_WS_URL ?? `ws://${location.hostname}:${import.meta.env.VITE_WS_PORT}`;
 const GAME_URL: string | undefined = import.meta.env.VITE_GAME_URL;
 const RECONNECT_MS = 2000;
 const MAP_MARGIN = 24;

@@ -1,6 +1,14 @@
+import { loadEnvFile } from 'node:process';
+import { fileURLToPath } from 'node:url';
 import { BOT_TARGET } from '@snake/shared';
 import { BotController } from './bots/bot';
 import { startServer } from './server';
+
+try {
+  loadEnvFile(fileURLToPath(new URL('../../../.env', import.meta.url)));
+} catch (error) {
+  if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+}
 
 const port = Number(process.env.PORT ?? 8080);
 const bots = new BotController();

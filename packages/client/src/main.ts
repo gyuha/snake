@@ -10,7 +10,7 @@ import { playStartBanner } from './ui/start-banner';
 import { setupTouchControls } from './ui/touch-controls';
 import { drawAnimalIcon, drawPreview } from './ui/preview';
 
-const WS_URL: string = import.meta.env.VITE_WS_URL ?? `ws://${location.hostname}:8080`;
+const WS_URL: string = import.meta.env.VITE_WS_URL ?? `ws://${location.hostname}:${import.meta.env.VITE_WS_PORT}`;
 const STEER_INTERVAL_MS = 1000 / 30;
 const NAME_KEY = 'snake.name';
 

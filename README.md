@@ -145,9 +145,17 @@ Ctrl+C 가능? ─ 예 → Ctrl+C
 
 ## 설정
 
+루트의 `.env.sample`을 `.env`로 복사하고 `PORT`를 변경하면 서버와 클라이언트의 WebSocket 포트에 함께 적용됩니다. 변경 후 실행 중인 개발 서버를 재시작하세요. `.env`는 git에 올리지 않습니다.
+
+```bash
+cp .env.sample .env
+# .env에서 PORT=9000 등으로 변경
+task dev
+```
+
 | 환경 변수 | 대상 | 기본값 | 설명 |
 |---|---|---|---|
-| `PORT` | 서버 | `8080` | WebSocket 서버 포트 |
+| `PORT` | 서버·클라이언트 | `8080` | 루트 `.env`에서 WebSocket 포트 설정. 셸 환경 변수가 우선 |
 | `VITE_WS_URL` | 클라이언트 | `ws://<접속 호스트>:8080` | 접속할 서버 주소 |
 | `VITE_GAME_URL` | 클라이언트 | 접속 주소 (localhost면 LAN 주소) | 관전 화면 QR코드에 표시할 게임 주소. `packages/client/.env.sample`을 `.env`로 복사해 설정 (`.env`는 git에 올리지 않음) |
 
