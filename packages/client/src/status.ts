@@ -11,6 +11,7 @@ import { RoundClock, formatClock } from './ui/round-clock';
 import { playStartBanner } from './ui/start-banner';
 
 const WS_URL: string = import.meta.env.VITE_WS_URL ?? `ws://${location.hostname}:8080`;
+const GAME_URL: string | undefined = import.meta.env.VITE_GAME_URL;
 const RECONNECT_MS = 2000;
 const MAP_MARGIN = 24;
 
@@ -158,7 +159,7 @@ botsInput.addEventListener('input', drawRound);
 setInterval(drawRound, 250);
 
 function drawGameLink(lanHosts: string[]): void {
-  const url = gameUrl(location, lanHosts);
+  const url = GAME_URL || gameUrl(location, lanHosts);
   el('qr-url').textContent = url;
   drawQr(el<HTMLCanvasElement>('qr'), url, 264);
 }
