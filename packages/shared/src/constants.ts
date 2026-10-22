@@ -28,6 +28,8 @@ export const BOOST_FOOD_SIZE = 3;
 
 export const NATURAL_FOOD_TARGET = 4000;
 export const FOOD_RESPAWN_PER_TICK = 50;
+/** Natural food despawns after this many seconds (scaled by 0.5–1.5× per piece) so uneaten food at the rim recycles. */
+export const NATURAL_FOOD_LIFETIME = 30;
 export const NATURAL_FOOD_VALUE_PER_SIZE = 0.05;
 export const DEATH_FOOD_SIZE = 8;
 export const DEATH_FOOD_VALUE = 0.4;
@@ -49,6 +51,6 @@ export const NO_KILLER = 0xffff;
 export const MINIMAP_SIZE = 64;
 export const LEADERBOARD_SIZE = 10;
 
-/** Allowed round lengths, in whole minutes. */
-export const ROUND_MIN_MINUTES = 1;
+/** Allowed round lengths, in whole minutes; 0 starts a free game with no time limit. */
+export const ROUND_MIN_MINUTES = 0;
 export const ROUND_MAX_MINUTES = 60;
