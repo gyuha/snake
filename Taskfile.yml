@@ -57,6 +57,22 @@ tasks:
     cmds:
       - npm run loadtest -- {{.CLI_ARGS}}
 
+  start:
+    desc: 클라이언트를 빌드하고 pm2로 게임 서버를 백그라운드 실행
+    deps: [build]
+    cmds:
+      - pm2 startOrRestart ecosystem.config.cjs
+
+  stop:
+    desc: pm2에서 게임 서버 중단 및 제거
+    cmds:
+      - pm2 delete ecosystem.config.cjs
+
+  restart:
+    desc: 클라이언트를 다시 빌드하고 게임 서버 재시작 (꺼져 있으면 시작)
+    cmds:
+      - task: start
+
   check:
     desc: 커밋 전 검증 (테스트 + 타입 검사 + 빌드)
     cmds:
