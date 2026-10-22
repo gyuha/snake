@@ -36,6 +36,21 @@ describe('BotController', () => {
     expect(w.snakes.size).toBe(5);
   });
 
+  it('follows a new target on the next update once the world has been cleared', () => {
+    const w = emptyWorld();
+    const bots = new BotController(5, seededRng(1));
+    bots.update(w, 0);
+    w.clearSnakes();
+    bots.setTarget(2);
+    bots.update(w, 1);
+    expect(bots.count).toBe(2);
+    expect(w.snakes.size).toBe(2);
+    w.clearSnakes();
+    bots.setTarget(0);
+    bots.update(w, 2);
+    expect(bots.count).toBe(0);
+  });
+
   it('gives each bot an animal within range', () => {
     const w = emptyWorld();
     new BotController(20, seededRng(3)).update(w, 0);

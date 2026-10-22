@@ -22,11 +22,17 @@
       #skins button { width: 28px; height: 28px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; padding: 0; }
       #skins button.selected { border-color: #ffffff; }
       .primary { padding: 10px 28px; font-size: 16px; border: 0; border-radius: 8px; background: #4fbf73; color: #08130b; font-weight: 700; cursor: pointer; }
+      @keyframes banner { 0% { opacity: 0; transform: scale(0.85); } 12% { opacity: 1; transform: scale(1); } 72% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: scale(1.04); } }
+      #start-banner { position: fixed; display: flex; align-items: center; justify-content: center; pointer-events: none; z-index: 10; opacity: 0; font-size: clamp(64px, 14vw, 160px); font-weight: 800; white-space: nowrap; text-shadow: 0 6px 32px rgba(0, 0, 0, 0.7); }
+      #start-banner.play { animation: banner 1.5s ease-out forwards; }
+      #start-banner { inset: 0; }
       #hud { position: fixed; inset: 0; pointer-events: none; }
       #leaderboard { position: absolute; top: 12px; right: 16px; width: 200px; font-size: 13px; background: rgba(0, 0, 0, 0.25); padding: 8px 12px; border-radius: 8px; }
       #leaderboard ol { margin: 4px 0; padding-left: 20px; }
       #leaderboard li span:last-child { float: right; opacity: 0.8; }
       #stats { position: absolute; left: 16px; bottom: 14px; font-size: 16px; }
+      #round-time { position: absolute; left: 50%; top: 12px; transform: translateX(-50%); padding: 2px 12px; border-radius: 8px; background: rgba(0, 0, 0, 0.35); font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; }
+      #round-time[hidden] { display: none; }
       #minimap { position: absolute; right: 16px; bottom: 16px; width: 128px; height: 128px; border-radius: 50%; background: rgba(0, 0, 0, 0.35); }
       #touch-controls { display: none; }
       @media (pointer: coarse) {
@@ -47,6 +53,7 @@
     <div id="hud">
       <div id="leaderboard"><strong>리더보드</strong><ol id="board"></ol><div id="rank"></div></div>
       <div id="stats"></div>
+      <div id="round-time" hidden></div>
       <canvas id="minimap"></canvas>
     </div>
     <div id="touch-controls">
@@ -76,6 +83,14 @@
         <button id="reconnect" class="primary" type="button">재접속</button>
       </div>
     </div>
+    <div id="round-ended" class="overlay" hidden>
+      <div class="panel">
+        <h1>게임 종료</h1>
+        <p id="my-result" style="font-size: 20px; font-weight: 700; color: #ffd54a"></p>
+        <p>다음 라운드가 시작되기를 기다려 주세요.</p>
+      </div>
+    </div>
+    <div id="start-banner">게임 시작</div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

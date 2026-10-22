@@ -35,6 +35,7 @@ export const EAT_MARGIN = 25;
 export const FOOD_COLORS = 9;
 
 export const BOT_TARGET = 30;
+export const BOT_MAX = 100;
 export const SPAWN_RADIUS_FRAC = 0.7;
 export const SPAWN_CLEARANCE = 300;
 export const FAM_CAP = 0.999;
@@ -47,3 +48,7 @@ export const ANIMAL_COUNT = ANIMALS.length;
 export const NO_KILLER = 0xffff;
 export const MINIMAP_SIZE = 64;
 export const LEADERBOARD_SIZE = 10;
+
+/** Allowed round lengths, in whole minutes. */
+export const ROUND_MIN_MINUTES = 1;
+export const ROUND_MAX_MINUTES = 60;

@@ -22,4 +22,15 @@ describe('client index.html', () => {
     expect(html).toMatch(/id="joystick-knob"/);
     expect(html).toMatch(/id="boost-btn"/);
   });
+
+  it('shows the round countdown in the HUD and has an end-of-round overlay above the other screens', () => {
+    const html = readFileSync(new URL('../index.html', import.meta.url), 'utf-8');
+    expect(html).toMatch(/id="round-time"/);
+    expect(html).toMatch(/id="round-ended"/);
+    expect(html).toMatch(/id="my-result"/);
+    expect(html).toMatch(/id="start-banner"/);
+    expect(html).toContain('게임 시작');
+    expect(html).toMatch(/@keyframes\s+banner/);
+    expect(html.indexOf('id="round-ended"')).toBeGreaterThan(html.indexOf('id="lost"'));
+  });
 });

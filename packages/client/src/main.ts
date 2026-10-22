@@ -1,10 +1,12 @@
-import { ANIMAL_COUNT, SKIN_COUNT, START_SEGMENTS, WORLD_RADIUS, dequantizeAngle8, quantizeAngle8, sanitizeName } from '@snake/shared';
+import { ANIMAL_COUNT, SKIN_COUNT, START_SEGMENTS, WORLD_RADIUS, score, dequantizeAngle8, quantizeAngle8, sanitizeName } from '@snake/shared';
 import { Input } from './input';
 import { Connection } from './net/connection';
 import { SKINS } from './render/palette';
 import { Renderer, cameraScale, type Camera } from './render/renderer';
 import { Mirror } from './state/mirror';
 import { Hud } from './ui/hud';
+import { RoundClock, formatClock, formatMyResult } from './ui/round-clock';
+import { playStartBanner } from './ui/start-banner';
 import { setupTouchControls } from './ui/touch-controls';
 import { drawAnimalIcon, drawPreview } from './ui/preview';
 
@@ -27,11 +29,16 @@ const previewCanvas = el<HTMLCanvasElement>('preview');
 const deathScreen = el('death');
 const finalScore = el('final-score');
 const lostScreen = el('lost');
+const roundTime = el('round-time');
+const roundEnded = el('round-ended');
+const myResult = el('my-result');
+const startBanner = el('start-banner');
 
 const mirror = new Mirror();
 const renderer = new Renderer(canvas);
 const input = new Input(canvas);
 setupTouchControls(input, el('joystick'), el('joystick-knob'), el('boost-btn'));
+const round = new RoundClock();
 const hud = new Hud(el<HTMLOListElement>('board'), el('rank'), el('stats'), el<HTMLCanvasElement>('minimap'));
 
 let conn: Connection | null = null;
@@ -53,7 +60,11 @@ function connect(): void {
   conn = new Connection(
     WS_URL,
     (msgs) => {
-      for (const msg of msgs) mirror.apply(msg);
+      for (const msg of msgs) {
+        if (msg.t === 'round') {
+          if (round.apply(msg.state, msg.seq, msg.remainingMs, performance.now())) playStartBanner(startBanner);
+        } else mirror.apply(msg);
+      }
     },
     () => {
       conn = null;
@@ -158,6 +169,18 @@ function frame(now: number): void {
   camera = { x: focus.x, y: focus.y, scale: cameraScale(sct, renderer.width, renderer.height) };
   renderer.draw(mirror, camera);
   hud.update(mirror);
+  roundTime.hidden = round.state !== 'running';
+  roundTime.textContent = formatClock(round.remaining(now));
+  roundEnded.hidden = round.state !== 'ended';
+  myResult.textContent = round.state === 'ended'
+    ? formatMyResult({
+      alive: self !== null,
+      myRank: mirror.leaderboard?.myRank ?? 0,
+      total: mirror.leaderboard?.total ?? 0,
+      score: self ? score(self.body.points.length, self.fam) : 0,
+      finalScore: mirror.death?.finalScore ?? null,
+    })
+    : '';
   requestAnimationFrame(frame);
 }
 

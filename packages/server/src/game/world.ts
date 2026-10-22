@@ -78,6 +78,16 @@ export class World {
     this.removeSnake(s, killerId);
   }
 
+  /** Takes every snake out of the world without a death event or death food; returns them. */
+  clearSnakes(): Snake[] {
+    const all = Array.from(this.snakes.values());
+    for (const s of all) {
+      s.alive = false;
+      this.snakes.delete(s.id);
+    }
+    return all;
+  }
+
   private removeSnake(s: Snake, killerId: number): void {
     if (!s.alive) return;
     s.alive = false;

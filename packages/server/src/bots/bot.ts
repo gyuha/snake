@@ -29,9 +29,14 @@ export class BotController {
   private readonly brains = new Map<number, Brain>();
 
   constructor(
-    private readonly target = BOT_TARGET,
+    private target = BOT_TARGET,
     private readonly rng: () => number = Math.random,
   ) {}
+
+  /** Bots are only ever added, so a lower target takes effect once the world has been cleared. */
+  setTarget(target: number): void {
+    this.target = target;
+  }
 
   get count(): number {
     return this.brains.size;

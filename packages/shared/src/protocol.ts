@@ -1,8 +1,8 @@
-import { ANIMAL_COUNT, MAX_NAME_BYTES, MINIMAP_SIZE, SKIN_COUNT } from './constants';
+import { ANIMAL_COUNT, MAX_NAME_BYTES, MINIMAP_SIZE, SKIN_COUNT, WORLD_RADIUS } from './constants';
 
 export class ProtocolError extends Error {}
 
-export const C2S = { JOIN: 0x01, STEER: 0x02, BOOST: 0x03, PING: 0x04 } as const;
+export const C2S = { JOIN: 0x01, STEER: 0x02, BOOST: 0x03, PING: 0x04, SPECTATE: 0x05, START_ROUND: 0x06 } as const;
 
 export const S2C = {
   WELCOME: 0x10,
@@ -21,13 +21,21 @@ export const S2C = {
   MINIMAP: 0x31,
   DEATH: 0x32,
   PONG: 0x33,
+  OVERVIEW: 0x34,
+  ROUND: 0x35,
+  SERVER_INFO: 0x36,
 } as const;
 
 export type ClientMsg =
   | { t: 'join'; name: string; skin: number; animal: number }
   | { t: 'steer'; angle: number }
   | { t: 'boost'; on: boolean }
-  | { t: 'ping' };
+  | { t: 'ping' }
+  | { t: 'spectate' }
+  | { t: 'startRound'; minutes: number; bots: number };
+
+export const ROUND_STATES = ['none', 'running', 'ended'] as const;
+export type RoundState = (typeof ROUND_STATES)[number];
 
 export interface FoodWire {
   rx: number;
@@ -47,6 +55,30 @@ export interface SnakeRank {
   rank: number;
 }
 
+/** One snake in the spectator overview; x/y are quantized with quantizeCoord, ang with quantizeAngle16. */
+export interface OverviewSnake {
+  id: number;
+  skin: number;
+  animal: number;
+  name: string;
+  x: number;
+  y: number;
+  ang: number;
+  score: number;
+}
+
+const COORD_SCALE = 0xffff / (2 * WORLD_RADIUS);
+
+/** World units → u16, clamped to the world square so float drift at the edge cannot break encoding. */
+export function quantizeCoord(v: number): number {
+  if (!(v > 0)) return 0;
+  return Math.min(0xffff, Math.round(v * COORD_SCALE));
+}
+
+export function dequantizeCoord(q: number): number {
+  return q / COORD_SCALE;
+}
+
 export type ServerMsg =
   | { t: 'welcome'; selfId: number; worldRadius: number; sectorSize: number; segSpacing: number; tickHz: number; mscps: number; maxSegments: number }
   | { t: 'snakeAdd'; id: number; name: string; skin: number; animal: number; ang: number; wang: number; speed: number; fam: number; tailX: number; tailY: number; iangs: number[] }
@@ -63,6 +95,9 @@ export type ServerMsg =
   | { t: 'leaderboard'; myRank: number; total: number; entries: LeaderEntry[]; ranks: SnakeRank[] }
   | { t: 'minimap'; bits: Uint8Array }
   | { t: 'death'; killerId: number; finalScore: number }
+  | { t: 'overview'; snakes: OverviewSnake[] }
+  | { t: 'round'; state: RoundState; seq: number; remainingMs: number }
+  | { t: 'serverInfo'; hosts: string[] }
   | { t: 'pong' };
 
 const MINIMAP_BYTES = (MINIMAP_SIZE * MINIMAP_SIZE) / 8;
@@ -230,6 +265,12 @@ export function encodeClient(msg: ClientMsg): Uint8Array {
     case 'ping':
       w.u8(C2S.PING);
       break;
+    case 'spectate':
+      w.u8(C2S.SPECTATE);
+      break;
+    case 'startRound':
+      w.u8(C2S.START_ROUND).u8(msg.minutes).u8(msg.bots);
+      break;
   }
   return w.finish();
 }
@@ -260,6 +301,12 @@ export function decodeClient(buf: Uint8Array): ClientMsg {
     }
     case C2S.PING:
       msg = { t: 'ping' };
+      break;
+    case C2S.SPECTATE:
+      msg = { t: 'spectate' };
+      break;
+    case C2S.START_ROUND:
+      msg = { t: 'startRound', minutes: r.u8(), bots: r.u8() };
       break;
     default:
       throw new ProtocolError(`unknown client opcode: ${op}`);
@@ -323,6 +370,17 @@ export function encodeServer(w: Writer, msg: ServerMsg): void {
       break;
     case 'death':
       w.u8(S2C.DEATH).u16(msg.killerId).u24(msg.finalScore);
+      break;
+    case 'overview':
+      w.u8(S2C.OVERVIEW).u16(msg.snakes.length);
+      for (const s of msg.snakes) w.u16(s.id).u8(s.skin).u8(s.animal).str(s.name).u16(s.x).u16(s.y).u16(s.ang).u24(s.score);
+      break;
+    case 'round':
+      w.u8(S2C.ROUND).u8(ROUND_STATES.indexOf(msg.state)).u8(msg.seq).u24(msg.remainingMs);
+      break;
+    case 'serverInfo':
+      w.u8(S2C.SERVER_INFO).u8(msg.hosts.length);
+      for (const h of msg.hosts) w.str(h);
       break;
     case 'pong':
       w.u8(S2C.PONG);
@@ -394,6 +452,30 @@ function decodeServerMsg(r: Reader): ServerMsg {
       return { t: 'minimap', bits: r.bytes(MINIMAP_BYTES) };
     case S2C.DEATH:
       return { t: 'death', killerId: r.u16(), finalScore: r.u24() };
+    case S2C.OVERVIEW: {
+      const n = r.u16();
+      const snakes: OverviewSnake[] = [];
+      for (let i = 0; i < n; i++) {
+        const id = r.u16();
+        const skin = r.u8();
+        if (skin >= SKIN_COUNT) throw new ProtocolError(`skin out of range: ${skin}`);
+        const animal = r.u8();
+        if (animal >= ANIMAL_COUNT) throw new ProtocolError(`animal out of range: ${animal}`);
+        snakes.push({ id, skin, animal, name: r.str(), x: r.u16(), y: r.u16(), ang: r.u16(), score: r.u24() });
+      }
+      return { t: 'overview', snakes };
+    }
+    case S2C.ROUND: {
+      const state = ROUND_STATES[r.u8()];
+      if (!state) throw new ProtocolError('unknown round state');
+      return { t: 'round', state, seq: r.u8(), remainingMs: r.u24() };
+    }
+    case S2C.SERVER_INFO: {
+      const n = r.u8();
+      const hosts: string[] = [];
+      for (let i = 0; i < n; i++) hosts.push(r.str());
+      return { t: 'serverInfo', hosts };
+    }
     case S2C.PONG:
       return { t: 'pong' };
     default:
